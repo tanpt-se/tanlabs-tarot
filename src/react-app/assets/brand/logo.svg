@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" role="img" aria-label="Tanlabs Tarot">
+	<defs>
+		<filter id="grain" x="0%" y="0%" width="100%" height="100%">
+			<feTurbulence
+				type="fractalNoise"
+				baseFrequency="0.95"
+				numOctaves="4"
+				stitchTiles="stitch"
+				result="noise"
+			/>
+			<feColorMatrix type="saturate" values="0" in="noise" result="mono" />
+			<feBlend in="SourceGraphic" in2="mono" mode="multiply" />
+		</filter>
+		<radialGradient id="sunGlow" cx="50%" cy="42%" r="58%">
+			<stop offset="0%" stop-color="#fff4b8" />
+			<stop offset="55%" stop-color="#f4d03f" />
+			<stop offset="100%" stop-color="#d4a017" />
+		</radialGradient>
+	</defs>
+
+	<g filter="url(#grain)">
+		<rect width="160" height="160" fill="#faf7f0" />
+		<rect x="10" y="10" width="140" height="140" fill="none" stroke="#171717" stroke-width="3" />
+		<rect x="18" y="18" width="124" height="124" fill="url(#sunGlow)" stroke="#171717" stroke-width="2" />
+
+		<circle cx="80" cy="78" r="34" fill="none" stroke="#171717" stroke-width="2" />
+		<circle cx="80" cy="78" r="24" fill="#fffdf9" stroke="#171717" stroke-width="1.5" />
+
+		<g fill="#171717" transform="translate(80 78)">
+			<path d="M0 -20 L4.5 -6.5 L19 -6.5 L7 3.5 L11.5 17 L0 8.5 L-11.5 17 L-7 3.5 L-19 -6.5 L-4.5 -6.5 Z" />
+			<path
+				d="M0 -12 L2.8 -4 L11 -4 L4.2 1.5 L6.8 9 L0 5 L-6.8 9 L-4.2 1.5 L-11 -4 L-2.8 -4 Z"
+				fill="#b42318"
+				transform="rotate(45)"
+			/>
+		</g>
+
+		<g stroke="#2f5d3a" stroke-width="2" fill="none">
+			<path d="M80 30 L80 42" />
+			<path d="M80 114 L80 126" />
+			<path d="M30 78 L42 78" />
+			<path d="M118 78 L130 78" />
+			<path d="M44.5 42.5 L52.5 50.5" />
+			<path d="M107.5 105.5 L115.5 113.5" />
+			<path d="M115.5 42.5 L107.5 50.5" />
+			<path d="M52.5 105.5 L44.5 113.5" />
+		</g>
+
+		<circle cx="80" cy="78" r="5" fill="#b42318" stroke="#171717" stroke-width="1" />
+	</g>
+</svg>
