@@ -1,14 +1,17 @@
 import { FormEvent, useState } from "react";
+import { GameButton } from "../GameButton";
 
 interface ChatInputProps {
 	onSubmit: (message: string) => void;
-	placeholder?: string;
+	placeholder: string;
+	sendLabel: string;
 	autoFocus?: boolean;
 }
 
 export function ChatInput({
 	onSubmit,
-	placeholder = "Đặt câu hỏi của bạn...",
+	placeholder,
+	sendLabel,
 	autoFocus = false,
 }: ChatInputProps) {
 	const [value, setValue] = useState("");
@@ -38,16 +41,17 @@ export function ChatInput({
 					}
 				}}
 			/>
-			<button
-				className="chat-input__submit"
+			<GameButton
 				type="submit"
+				layout="icon"
+				tone="primary"
 				disabled={!value.trim()}
-				aria-label="Gửi câu hỏi"
+				aria-label={sendLabel}
 			>
-				<svg viewBox="0 0 24 24" aria-hidden="true">
+				<svg className="game-button__icon" viewBox="0 0 24 24" aria-hidden="true">
 					<path d="M3.4 20.6 21 12 3.4 3.4l1.8 7.2L16 12l-10.8 1.4-1.8 7.2Z" />
 				</svg>
-			</button>
+			</GameButton>
 		</form>
 	);
 }

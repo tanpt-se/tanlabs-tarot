@@ -31,6 +31,21 @@ export function useReadingHistory() {
 		[persist],
 	);
 
+	const beginSession = useCallback(() => {
+		const reading = createReading("");
+		persist((current) => [
+			...current.filter((item) => item.status === "complete"),
+			reading,
+		]);
+		return reading;
+	}, [persist]);
+
+	const startReading = useCallback(() => {
+		const reading = createReading("");
+		persist((current) => [...current, reading]);
+		return reading;
+	}, [persist]);
+
 	const updateReading = useCallback(
 		(id: string, patch: Partial<Reading>) => {
 			persist((current) =>
@@ -50,6 +65,8 @@ export function useReadingHistory() {
 		readings,
 		hasReadings: readings.length > 0,
 		addQuestion,
+		beginSession,
+		startReading,
 		updateReading,
 		clearHistory,
 	};

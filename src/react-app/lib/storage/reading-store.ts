@@ -14,7 +14,12 @@ export function loadReadingHistory(): ReadingHistory {
 		const parsed = JSON.parse(raw) as ReadingHistory;
 		if (!Array.isArray(parsed.readings)) return emptyHistory();
 
-		return parsed;
+		return {
+			readings: parsed.readings.map((reading) => ({
+				...reading,
+				spreadType: reading.spreadType ?? null,
+			})),
+		};
 	} catch {
 		return emptyHistory();
 	}
@@ -30,6 +35,7 @@ export function createReading(question: string): Reading {
 		question: question.trim(),
 		createdAt: new Date().toISOString(),
 		status: "pending",
+		spreadType: null,
 		cards: [],
 		interpretation: null,
 	};

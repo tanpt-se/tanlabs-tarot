@@ -1,54 +1,55 @@
 import type { Reading } from "../../lib/types/reading";
+import { useLocale } from "../../hooks/use-locale";
 import { CardBack } from "../brand/CardBack";
 
 interface ReadingBubbleProps {
 	reading: Reading;
 }
 
-function formatTime(iso: string) {
-	return new Intl.DateTimeFormat("vi-VN", {
+export function ReadingBubble({ reading }: ReadingBubbleProps) {
+	const { labels, dateTimeLocale } = useLocale();
+
+	const formattedTime = new Intl.DateTimeFormat(dateTimeLocale, {
 		hour: "2-digit",
 		minute: "2-digit",
 		day: "2-digit",
 		month: "2-digit",
-	}).format(new Date(iso));
-}
+	}).format(new Date(reading.createdAt));
 
-function statusLabel(status: Reading["status"]) {
-	switch (status) {
-		case "pending":
-			return "Đang chờ trải bài...";
-		case "drawing":
-			return "Đang rút bài...";
-		case "interpreting":
-			return "Đang giải bài...";
-		case "complete":
-			return "Đã hoàn thành";
+	function statusLabel(status: Reading["status"]) {
+		switch (status) {
+			case "pending":
+				return labels.statusPending;
+			case "drawing":
+				return labels.statusDrawing;
+			case "interpreting":
+				return labels.statusInterpreting;
+			case "complete":
+				return labels.statusComplete;
+		}
 	}
-}
 
-export function ReadingBubble({ reading }: ReadingBubbleProps) {
 	return (
 		<article className="reading-thread">
 			<div className="message message--user">
 				<p className="message__text">{reading.question}</p>
 				<time className="message__time" dateTime={reading.createdAt}>
-					{formatTime(reading.createdAt)}
+					{formattedTime}
 				</time>
 			</div>
 
 			<div className="message message--reading">
-				<CardBack size="avatar" />
+				<CardBack size="avatar" alt={labels.cardBackAlt} />
 				<div className="message__body">
-					<p className="message__label">Lần trải bài</p>
+					<p className="message__label">{labels.readingLabel}</p>
 					<p className="message__status">{statusLabel(reading.status)}</p>
 					{reading.cards.length > 0 ? (
 						<p className="message__meta">
-							{reading.cards.length} lá bài đã rút
+							{labels.cardsDrawn(reading.cards.length)}
 						</p>
 					) : (
 						<p className="message__meta message__meta--muted">
-							Chưa có lá bài — sẽ bổ sung ở bước trải bài
+							{labels.noCardsYet}
 						</p>
 					)}
 					{reading.interpretation && (

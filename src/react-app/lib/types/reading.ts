@@ -1,5 +1,7 @@
 export type ReadingStatus = "pending" | "drawing" | "interpreting" | "complete";
 
+export type SpreadType = "single" | "three" | "six";
+
 export type CardArcana = "major" | "minor";
 
 export interface DrawnCard {
@@ -13,6 +15,7 @@ export interface Reading {
 	question: string;
 	createdAt: string;
 	status: ReadingStatus;
+	spreadType: SpreadType | null;
 	cards: DrawnCard[];
 	interpretation: string | null;
 }
