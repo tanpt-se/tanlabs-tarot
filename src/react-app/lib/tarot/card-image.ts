@@ -6,7 +6,11 @@ export type CardImage = string;
 const cache = new Map<CardId, string>();
 const pending = new Map<CardId, Promise<string>>();
 
-const DEFAULT_PRELOAD_CONCURRENCY = 3;
+const DEFAULT_PRELOAD_CONCURRENCY = 6;
+
+export function isCardImageReady(id: CardId): boolean {
+	return cache.has(id);
+}
 
 function decodeImage(url: string): Promise<void> {
 	return new Promise((resolve, reject) => {

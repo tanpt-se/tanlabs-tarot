@@ -82,12 +82,18 @@ export const en: UiLabels = {
 	spreadSixDesc: "A deeper reading across six positions",
 	spreadShuffleNarration:
 		"You shuffle the deck. The cards whisper in the candlelight...",
-	spreadReady: "I am ready",
+	spreadReady: "I'm ready",
 	spreadShuffling: "Shuffling...",
 	spreadReveal: "Reveal",
 	spreadConceal: "Face down",
 	spreadRevealAll: "Reveal all",
 	spreadSummary: "Summary",
+	spreadInterpretSequential: "Explain each card, then summarize",
+	spreadInterpretSequentialDesc: "Walk through every position before the full reading",
+	spreadInterpretSummary: "Full reading at once",
+	spreadInterpretSummaryDesc: "One complete interpretation of the whole spread",
+	spreadInterpretNext: "Next card",
+	spreadInterpretSeeSummary: "See full summary",
 	spreadReading: "Reading",
 	spreadComplete: "Reading complete",
 	spreadNewReading: "New reading",
@@ -109,6 +115,7 @@ export const en: UiLabels = {
 	narratorAlt: "Mysterious hooded tarot reader",
 	narratorSkip: "[ >> skip ]",
 	narratorSkipLabel: "skip",
+	narratorAdvance: "Continue",
 	narratorHomeGreeting:
 		"Welcome, seeker. Whisper your question to the cards — I will guide you through the ritual.",
 	narratorSpreadQuestion:
@@ -119,10 +126,12 @@ export const en: UiLabels = {
 		"Listen… the deck is waking. When you feel ready, the cards will be dealt.",
 	narratorSpreadDrawing:
 		"The deck is choosing for you. Watch the cards fall into place.",
+	narratorSpreadInterpretChoice:
+		"The spread is open. How would you like me to read it for you?",
 	narratorSpreadReveal:
-		"Tap each card to turn it over. When every card is open, ask for the summary.",
+		"The cards are turning. Let each one speak before we weave the story.",
 	narratorSpreadInterpret:
-		"Every card is open. Press Summary when you are ready for the full reading.",
+		"Listen closely — this is what the cards whisper.",
 	narratorSpreadComplete:
 		"The veil lifts for now. Carry what you have learned into the waking world.",
 };

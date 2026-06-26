@@ -39,6 +39,10 @@
 	pointer-events: none;
 }
 
+.narrator-shell[data-active="true"] {
+	pointer-events: auto;
+}
+
 .narrator-shell[data-active="false"] {
 	height: 0;
 	overflow: hidden;
@@ -704,18 +708,33 @@
 	padding: 0;
 }
 
-.game-button.narrator-advance {
-	position: absolute;
-	right: var(--chrome-nav-inset);
-	bottom: calc((var(--narrator-bar-height) - var(--button-height)) / 2);
-	z-index: 6;
+.narrator-bar__footer {
+	display: flex;
+	justify-content: flex-end;
+	margin-top: 0.75rem;
+	pointer-events: auto;
+}
+
+.game-button.narrator-bar__advance {
+	position: static;
+	width: auto;
+	min-width: var(--chrome-nav-button-width);
+	max-width: 100%;
 	margin: 0;
 	pointer-events: auto;
 }
 
-.game-button.narrator-advance.game-button--nav {
-	width: auto;
-	min-width: var(--chrome-nav-button-width);
+.game-button.narrator-bar__advance.game-button--nav .game-button__frame {
+	gap: 0.35rem;
+	padding: 0 0.7rem 0 0.55rem;
+}
+
+.game-button.narrator-bar__advance.game-button--nav .game-button__label {
+	font-size: 0.68rem;
+	letter-spacing: 0.05em;
+	white-space: normal;
+	text-align: left;
+	line-height: 1.15;
 }
 
 .game-button.narrator-skip {
@@ -978,6 +997,24 @@
 }
 
 /* Spread screen */
+.spread-layout {
+	display: flex;
+	flex-direction: column;
+	flex: 1;
+	min-height: 0;
+	width: 100%;
+}
+
+.spread-layout .spread-screen {
+	flex: 1;
+	min-height: 0;
+}
+
+.spread-layout .game-stage {
+	flex: 1;
+	min-height: 0;
+}
+
 .spread-screen {
 	display: flex;
 	flex-direction: column;
@@ -1396,6 +1433,7 @@
 	margin: 0;
 	overflow: visible;
 	padding-block: 0.35rem;
+	contain: layout style;
 }
 
 .spread-board .tarot-card {
@@ -1412,6 +1450,7 @@
 	display: grid;
 	grid-template-columns: repeat(3, var(--spread-card-width));
 	justify-content: center;
+	justify-items: center;
 	gap: 1.15rem;
 	max-width: none;
 	margin-inline: auto;
@@ -1432,6 +1471,7 @@
 	margin-inline: auto;
 	place-items: center;
 	align-content: center;
+	justify-items: center;
 }
 
 .spread-board[data-count="6"] .tarot-card {
@@ -2323,7 +2363,7 @@
 .narrator-bar {
 	position: relative;
 	width: 100%;
-	pointer-events: none;
+	pointer-events: auto;
 }
 
 .narrator-bar__sprite {
@@ -2406,6 +2446,62 @@
 	min-height: 1.55em;
 }
 
+.narrator-choices {
+	display: flex;
+	flex-direction: column;
+	gap: 0.55rem;
+	margin-top: 0.85rem;
+	pointer-events: auto;
+}
+
+.narrator-choice {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 0.15rem;
+	width: 100%;
+	padding: 0.7rem 0.9rem;
+	border: 1.5px solid color-mix(in srgb, var(--palette-gold-dark) 55%, var(--foreground));
+	background: color-mix(in srgb, var(--card) 94%, var(--highlight));
+	text-align: left;
+	box-shadow: 3px 3px 0 color-mix(in srgb, var(--foreground) 8%, transparent);
+	transition:
+		background-color 0.15s ease,
+		transform 0.15s ease;
+}
+
+.narrator-choice:hover:not(:disabled) {
+	background: var(--accent);
+	transform: translateY(-1px);
+}
+
+.narrator-choice:disabled {
+	opacity: 0.45;
+	cursor: not-allowed;
+}
+
+.narrator-choice__title {
+	font-size: 0.82rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+}
+
+.narrator-choice__desc {
+	font-size: 0.78rem;
+	line-height: 1.35;
+	color: var(--muted-foreground);
+}
+
+.narrator-bar[data-choices="true"] .narrator-bar__frame,
+.narrator-bar[data-choices="true"] .narrator-bar__inner {
+	min-height: auto;
+}
+
+.narrator-shell[data-choices="true"] {
+	--narrator-bar-height: auto;
+}
+
 .narrator-bar__message--typing::after {
 	content: "";
 	display: inline-block;
@@ -2430,6 +2526,10 @@
 }
 
 @media (min-width: 640px) {
+	.game-button.narrator-bar__advance.game-button--nav .game-button__label {
+		font-size: 0.78rem;
+	}
+
 	.narrator-bar__sprite {
 		left: var(--chrome-nav-inset);
 		max-width: min(17rem, 29vw);

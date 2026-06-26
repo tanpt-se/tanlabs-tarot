@@ -1,6 +1,6 @@
 ---
 description: Locked tarot card UX — do not regress sizing, hover preview, or draw flow
-globs: src/react-app/components/spread/TarotCard.tsx,src/react-app/App.css,src/react-app/providers/self-view-session-context.tsx,src/react-app/components/spread/SelfViewDeckScreen.tsx
+globs: src/react-app/components/spread/TarotCard.tsx,src/react-app/App.css,src/react-app/providers/self-view-session-context.tsx,src/react-app/components/spread/SelfViewDeckScreen.tsx,src/react-app/components/spread/SpreadScreen.tsx
 alwaysApply: false
 ---
 
@@ -23,6 +23,14 @@ Do **not** change these behaviors unless the user explicitly asks. Other work mu
 - `data-preview-elevated` keeps z-index briefly after pointer leave (~300ms).
 - Reversed + flipped front face: `overflow: visible` (clip fix for hover).
 - Do not use `disabled` on flip button during reveal load — use `data-locked` + `pointer-events: none`.
+
+## Guided spread (SpreadScreen)
+
+- After spread type: narrator `narratorSpreadShuffle` + narrator **I'm ready** button only (no stage CTA).
+- Deal: shuffle anim → preload → deal-in → auto-flip each card (`revealLoading` chain).
+- Then `interpret-choice`: narrator asks how to read + **two choices in shell** (sequential per card + summary, or full reading at once).
+- Narrator shell is co-located in `SpreadScreen` via `NarratorShell` (not lifted to App).
+- Do not restore manual tap-to-flip / Reveal all in guided spread.
 
 ## Self-view draw flow
 

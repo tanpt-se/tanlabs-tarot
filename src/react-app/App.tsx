@@ -1,15 +1,11 @@
 import { useCallback, useMemo, useState } from "react";
 import { AppLoadingOverlay } from "./components/AppLoadingOverlay";
-import { NarratorAdvanceButton } from "./components/character/NarratorAdvanceButton";
-import { NarratorBar } from "./components/character/NarratorBar";
-import { NarratorSkipButton } from "./components/character/NarratorSkipButton";
 import { SettingsModal } from "./components/settings/SettingsModal";
 import { SelfViewShell } from "./components/spread/SelfViewShell";
 import { SpreadScreen } from "./components/spread/SpreadScreen";
 import { useGameScreen } from "./hooks/useGameScreen";
 import { useReadingHistory } from "./hooks/useReadingHistory";
 import { useSelfView } from "./hooks/use-self-view";
-import type { NarratorAdvanceConfig } from "./lib/types/narrator-advance";
 import type { Reading } from "./lib/types/reading";
 import "./App.css";
 
@@ -54,22 +50,6 @@ function App() {
 		[goToReading, isNavigating, readingId],
 	);
 
-	const [narratorMessage, setNarratorMessage] = useState<string | undefined>();
-	const [narratorAdvance, setNarratorAdvance] = useState<
-		NarratorAdvanceConfig | undefined
-	>();
-	const [narratorTyping, setNarratorTyping] = useState(false);
-	const [narratorSkip, setNarratorSkip] = useState<(() => void) | null>(null);
-	const handleNarratorMessageChange = useCallback((message?: string) => {
-		setNarratorMessage(message);
-	}, []);
-	const handleNarratorAdvanceChange = useCallback(
-		(config?: NarratorAdvanceConfig) => {
-			setNarratorAdvance(config);
-		},
-		[],
-	);
-
 	const handleSelfViewBack = useCallback(() => {
 		setSelfView(false);
 	}, [setSelfView]);
@@ -100,8 +80,6 @@ function App() {
 						onViewReading={handleViewReading}
 						onSettings={openSettings}
 						isNavigating={isNavigating}
-						onNarratorMessageChange={handleNarratorMessageChange}
-						onNarratorAdvanceChange={handleNarratorAdvanceChange}
 					/>
 				)}
 
@@ -117,30 +95,6 @@ function App() {
 			</main>
 
 			{isNavigating ? <AppLoadingOverlay /> : null}
-
-			{!selfView ? (
-				<div
-					className="narrator-shell"
-					data-active={narratorMessage ? "true" : "false"}
-				>
-					{narratorMessage ? (
-						<NarratorBar
-							message={narratorMessage}
-							onTypingChange={setNarratorTyping}
-							onSkipChange={setNarratorSkip}
-						/>
-					) : null}
-					{narratorSkip ? <NarratorSkipButton onClick={narratorSkip} /> : null}
-					{narratorAdvance ? (
-						<NarratorAdvanceButton
-							onClick={narratorAdvance.onAdvance}
-							label={narratorAdvance.label}
-							disabled={narratorAdvance.disabled || narratorTyping}
-							layout={narratorAdvance.layout}
-						/>
-					) : null}
-				</div>
-			) : null}
 		</div>
 	);
 }

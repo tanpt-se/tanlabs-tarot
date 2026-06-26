@@ -8,6 +8,7 @@ interface UseTypewriterTextOptions {
 }
 
 const INSTANT_CHAR_THRESHOLD = 120;
+const CHARS_PER_STEP = 3;
 
 function getReducedMotion(): boolean {
 	if (typeof window === "undefined") return false;
@@ -16,7 +17,7 @@ function getReducedMotion(): boolean {
 
 export function useTypewriterText(
 	text: string,
-	{ speedMs = 26, startDelayMs = 120, instant = false }: UseTypewriterTextOptions = {},
+	{ speedMs = 22, startDelayMs = 80, instant = false }: UseTypewriterTextOptions = {},
 ) {
 	const [displayed, setDisplayed] = useState("");
 	const [isTyping, setIsTyping] = useState(false);
@@ -49,6 +50,7 @@ export function useTypewriterText(
 			cancelledRef.current = true;
 			window.clearTimeout(startTimeoutId);
 			window.cancelAnimationFrame(rafId);
+			setIsTyping(false);
 		};
 
 		startTimeoutId = window.setTimeout(() => {
@@ -62,8 +64,15 @@ export function useTypewriterText(
 				if (cancelledRef.current) return;
 
 				if (now - lastTick >= speedMs) {
-					const elapsedSteps = Math.max(1, Math.floor((now - lastTick) / speedMs));
-					index = Math.min(text.length, index + elapsedSteps);
+					const elapsedSteps = Math.max(
+						1,
+						Math.floor((now - lastTick) / speedMs),
+					);
+					const step =
+						CHARS_PER_STEP *
+						(1 + Math.floor(index / 48)) *
+						elapsedSteps;
+					index = Math.min(text.length, index + step);
 					setDisplayed(text.slice(0, index));
 					lastTick = now;
 				}

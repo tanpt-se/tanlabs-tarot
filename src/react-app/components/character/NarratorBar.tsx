@@ -1,16 +1,20 @@
-import { useEffect } from "react";
+import { useEffect, type ReactNode } from "react";
 import { NARRATOR_SPRITE } from "../../assets";
 import { useTypewriterText } from "../../hooks/use-typewriter-text";
 import { useLocale } from "../../hooks/use-locale";
 
 interface NarratorBarProps {
 	message: string;
+	choices?: ReactNode;
+	advance?: ReactNode;
 	onTypingChange?: (isTyping: boolean) => void;
 	onSkipChange?: (skip: (() => void) | null) => void;
 }
 
 export function NarratorBar({
 	message,
+	choices,
+	advance,
 	onTypingChange,
 	onSkipChange,
 }: NarratorBarProps) {
@@ -26,7 +30,12 @@ export function NarratorBar({
 	}, [isTyping, onSkipChange, skip]);
 
 	return (
-		<aside className="narrator-bar" aria-live="polite">
+		<aside
+			className="narrator-bar"
+			data-choices={choices ? "true" : undefined}
+			data-advance={advance ? "true" : undefined}
+			aria-live="polite"
+		>
 			<img
 				className="narrator-bar__sprite"
 				src={NARRATOR_SPRITE}
@@ -40,6 +49,10 @@ export function NarratorBar({
 					>
 						{displayed}
 					</p>
+					{choices}
+					{advance ? (
+						<div className="narrator-bar__footer">{advance}</div>
+					) : null}
 				</div>
 			</div>
 		</aside>

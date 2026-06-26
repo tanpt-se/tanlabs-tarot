@@ -81,12 +81,18 @@ export const vi: UiLabels = {
 	spreadSixDesc: "Trải sâu qua sáu vị trí",
 	spreadShuffleNarration:
 		"Bạn trộn bộ bài. Những lá bài thì thầm trong ánh nến...",
-	spreadReady: "Tôi đã sẵn sàng",
+	spreadReady: "I'm ready",
 	spreadShuffling: "Đang trộn...",
 	spreadReveal: "Lật bài",
 	spreadConceal: "Úp bài",
 	spreadRevealAll: "Lật tất cả",
 	spreadSummary: "Tổng hợp",
+	spreadInterpretSequential: "Giải thích từng lá rồi tổng hợp",
+	spreadInterpretSequentialDesc: "Đi qua từng vị trí trước khi nghe lời giải đầy đủ",
+	spreadInterpretSummary: "Trải bài tổng hợp luôn",
+	spreadInterpretSummaryDesc: "Một lời giải hoàn chỉnh cho cả trải bài",
+	spreadInterpretNext: "Lá tiếp theo",
+	spreadInterpretSeeSummary: "Xem tổng hợp",
 	spreadReading: "Giải bài",
 	spreadComplete: "Hoàn thành trải bài",
 	spreadNewReading: "Trải bài mới",
@@ -108,6 +114,7 @@ export const vi: UiLabels = {
 	narratorAlt: "Cô gái trùm mũ bí ẩn dẫn trải bài tarot",
 	narratorSkip: "[ >> bỏ qua ]",
 	narratorSkipLabel: "bỏ qua",
+	narratorAdvance: "Tiếp tục",
 	narratorHomeGreeting:
 		"Chào người tìm đáp án. Hãy thì thầm câu hỏi của bạn — ta sẽ dẫn ngươi qua nghi thức trải bài.",
 	narratorSpreadQuestion:
@@ -118,10 +125,12 @@ export const vi: UiLabels = {
 		"Lắng nghe… bộ bài đang thức dậy. Khi ngươi sẵn sàng, ta sẽ bốc bài.",
 	narratorSpreadDrawing:
 		"Bộ bài đang tự chọn cho ngươi. Hãy nhìn các lá rơi xuống đúng chỗ.",
+	narratorSpreadInterpretChoice:
+		"Trải bài đã mở. Ngươi muốn ta giải theo cách nào?",
 	narratorSpreadReveal:
-		"Lật từng lá bằng cách chạm vào. Khi đủ lá, hãy nhấn Tổng hợp.",
+		"Các lá đang lật mở. Hãy lắng nghe từng lá trước khi ta dệt nên câu chuyện.",
 	narratorSpreadInterpret:
-		"Mọi lá đã mở. Nhấn Tổng hợp khi ngươi sẵn sàng nghe lời giải đầy đủ.",
+		"Lắng nghe kỹ — đây là điều các lá bài thì thầm.",
 	narratorSpreadComplete:
 		"Tấm màn buông xuống tạm thời. Mang theo điều ngươi đã ngộ ra vào thế giới thực.",
 };

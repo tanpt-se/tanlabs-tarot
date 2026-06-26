@@ -3,6 +3,7 @@ import type { DrawnCard } from "../../lib/types/reading";
 import {
 	getCardImage,
 	getCardImageUrl,
+	isCardImageReady,
 	loadCardImage,
 } from "../../lib/tarot/card-image";
 import type { CardId } from "../../lib/tarot/deck";
@@ -17,6 +18,8 @@ interface TarotCardProps {
 	dealIndex?: number;
 	/** Self-view draw: stay on card back until front art is ready, then auto-flip */
 	revealLoading?: boolean;
+	/** Guided spread: preload front while face-down; tap queues flip until art is ready */
+	preloadFront?: boolean;
 	/** Defer front image decode until card is near viewport (history spreads) */
 	loadWhenVisible?: boolean;
 	/** Self-view draw: called when front art is decoded and safe to flip */
@@ -36,6 +39,7 @@ export const TarotCard = memo(function TarotCard({
 	index = 0,
 	dealIndex,
 	revealLoading = false,
+	preloadFront = false,
 	loadWhenVisible = false,
 	onRevealReady,
 	onRevealFlipComplete,
@@ -46,6 +50,7 @@ export const TarotCard = memo(function TarotCard({
 	const rootRef = useRef<HTMLDivElement>(null);
 	const revealReadySentRef = useRef(false);
 	const revealFlipPendingRef = useRef(false);
+	const pendingManualFlipRef = useRef(false);
 	const onRevealReadyRef = useRef(onRevealReady);
 	const onRevealFlipCompleteRef = useRef(onRevealFlipComplete);
 	onRevealReadyRef.current = onRevealReady;
@@ -53,6 +58,7 @@ export const TarotCard = memo(function TarotCard({
 	const [isVisible, setIsVisible] = useState(!loadWhenVisible);
 	const [frontReady, setFrontReady] = useState(() => Boolean(getCardImage(cardId)));
 	const [hovering, setHovering] = useState(false);
+	const [mountUprightPreview, setMountUprightPreview] = useState(false);
 	const [previewElevated, setPreviewElevated] = useState(false);
 	const previewElevateTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(
 		undefined,
@@ -61,8 +67,11 @@ export const TarotCard = memo(function TarotCard({
 	const previewUpright = hovering && flipped && card.reversed;
 	const interactive = Boolean(onPress) && !revealLoading;
 	const shouldLoadFront =
-		(flipped || revealLoading) && (!loadWhenVisible || isVisible);
+		(flipped || revealLoading || preloadFront) &&
+		(!loadWhenVisible || isVisible);
 	const imageSrc = shouldLoadFront ? getCardImageUrl(cardId) : undefined;
+	const backLoading =
+		revealLoading || (preloadFront && !flipped && !frontReady);
 
 	const dealStyle = useMemo(
 		() =>
@@ -100,6 +109,11 @@ export const TarotCard = memo(function TarotCard({
 	}, [cardId]);
 
 	useEffect(() => {
+		if (isCardImageReady(cardId)) {
+			setFrontReady(true);
+			return;
+		}
+
 		if (!shouldLoadFront || frontReady) return;
 
 		let cancelled = false;
@@ -159,6 +173,15 @@ export const TarotCard = memo(function TarotCard({
 	}, [flipped, index, revealLoading]);
 
 	useEffect(() => {
+		if (!pendingManualFlipRef.current || !frontReady || !onPress || flipped) {
+			return;
+		}
+
+		pendingManualFlipRef.current = false;
+		onPress(index);
+	}, [flipped, frontReady, index, onPress]);
+
+	useEffect(() => {
 		setFlipAnimating(true);
 	}, [flipped]);
 
@@ -177,8 +200,24 @@ export const TarotCard = memo(function TarotCard({
 	);
 
 	const handleClick = useCallback(() => {
-		onPress?.(index);
-	}, [index, onPress]);
+		if (!onPress) return;
+
+		if (flipped) {
+			onPress(index);
+			return;
+		}
+
+		if (revealLoading) return;
+
+		if (frontReady) {
+			onPress(index);
+			return;
+		}
+
+		if (preloadFront) {
+			pendingManualFlipRef.current = true;
+		}
+	}, [flipped, frontReady, index, onPress, preloadFront, revealLoading]);
 
 	const handlePointerEnter = useCallback(() => {
 		if (!flipped || !card.reversed || !canHoverPreview()) return;
@@ -186,6 +225,7 @@ export const TarotCard = memo(function TarotCard({
 			clearTimeout(previewElevateTimeoutRef.current);
 			previewElevateTimeoutRef.current = undefined;
 		}
+		setMountUprightPreview(true);
 		setHovering(true);
 		setPreviewElevated(true);
 	}, [card.reversed, flipped]);
@@ -251,7 +291,7 @@ export const TarotCard = memo(function TarotCard({
 					>
 						<div
 							className="tarot-card__face tarot-card__face--back"
-							data-loading={revealLoading ? "true" : undefined}
+							data-loading={backLoading ? "true" : undefined}
 						>
 							<CardBack
 								size="spread"
@@ -275,7 +315,7 @@ export const TarotCard = memo(function TarotCard({
 												alt=""
 												size="spread"
 												reversed
-												eager={revealLoading}
+												eager={revealLoading || preloadFront}
 												onLoad={handleFrontLoad}
 											/>
 										</div>
@@ -283,13 +323,15 @@ export const TarotCard = memo(function TarotCard({
 											className="tarot-card__art-layer tarot-card__art-layer--upright"
 											aria-hidden={!previewUpright}
 										>
-											<CardArtMark
-												src={imageSrc}
-												alt=""
-												size="spread"
-												eager={revealLoading}
-												onLoad={handleFrontLoad}
-											/>
+											{mountUprightPreview ? (
+												<CardArtMark
+													src={imageSrc}
+													alt=""
+													size="spread"
+													eager={revealLoading || preloadFront}
+													onLoad={handleFrontLoad}
+												/>
+											) : null}
 										</div>
 									</div>
 								) : (
@@ -297,7 +339,7 @@ export const TarotCard = memo(function TarotCard({
 										src={imageSrc}
 										alt=""
 										size="spread"
-										eager={revealLoading}
+										eager={revealLoading || preloadFront}
 										onLoad={handleFrontLoad}
 									/>
 								)}

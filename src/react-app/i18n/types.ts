@@ -77,6 +77,12 @@ export type UiLabels = {
 	spreadConceal: string;
 	spreadRevealAll: string;
 	spreadSummary: string;
+	spreadInterpretSequential: string;
+	spreadInterpretSequentialDesc: string;
+	spreadInterpretSummary: string;
+	spreadInterpretSummaryDesc: string;
+	spreadInterpretNext: string;
+	spreadInterpretSeeSummary: string;
 	spreadReading: string;
 	spreadComplete: string;
 	spreadNewReading: string;
@@ -95,11 +101,13 @@ export type UiLabels = {
 	narratorAlt: string;
 	narratorSkip: string;
 	narratorSkipLabel: string;
+	narratorAdvance: string;
 	narratorHomeGreeting: string;
 	narratorSpreadQuestion: string;
 	narratorSpreadSetup: string;
 	narratorSpreadShuffle: string;
 	narratorSpreadDrawing: string;
+	narratorSpreadInterpretChoice: string;
 	narratorSpreadReveal: string;
 	narratorSpreadInterpret: string;
 	narratorSpreadComplete: string;
