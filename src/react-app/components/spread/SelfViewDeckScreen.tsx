@@ -33,6 +33,13 @@ export function SelfViewDeckScreen() {
 		setResetModalOpen(false);
 	}, [archiveCurrentSpread, resetLiveSpread]);
 
+	const toggleCardFlipByIndex = useCallback(
+		(index: number) => {
+			toggleCardFlip(index);
+		},
+		[toggleCardFlip],
+	);
+
 	const handleEscapeToCurrent = useCallback(() => {
 		if (!isViewingHistory) return;
 		if (hasOverlayOpen()) return;
@@ -104,13 +111,12 @@ export function SelfViewDeckScreen() {
 								<TarotCard
 									key={`${card.id}-${index}`}
 									card={card}
+									index={index}
 									flipped={
 										isViewingHistory ? true : flippedIndices.has(index)
 									}
 									onPress={
-										isViewingHistory
-											? undefined
-											: () => toggleCardFlip(index)
+										isViewingHistory ? undefined : toggleCardFlipByIndex
 									}
 								/>
 							))

@@ -72,6 +72,7 @@ export type UiLabels = {
 	spreadSixDesc: string;
 	spreadShuffleNarration: string;
 	spreadReady: string;
+	spreadShuffling: string;
 	spreadReveal: string;
 	spreadConceal: string;
 	spreadRevealAll: string;

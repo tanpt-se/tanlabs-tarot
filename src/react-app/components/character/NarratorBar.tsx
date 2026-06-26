@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect } from "react";
+import { useEffect } from "react";
 import { NARRATOR_SPRITE } from "../../assets/characters";
 import { useTypewriterText } from "../../hooks/use-typewriter-text";
 import { useLocale } from "../../hooks/use-locale";
@@ -21,7 +21,7 @@ export function NarratorBar({
 		onTypingChange?.(isTyping);
 	}, [isTyping, onTypingChange]);
 
-	useLayoutEffect(() => {
+	useEffect(() => {
 		onSkipChange?.(isTyping ? skip : null);
 	}, [isTyping, onSkipChange, skip]);
 

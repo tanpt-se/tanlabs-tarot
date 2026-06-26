@@ -82,6 +82,7 @@ export const vi: UiLabels = {
 	spreadShuffleNarration:
 		"Bạn trộn bộ bài. Những lá bài thì thầm trong ánh nến...",
 	spreadReady: "Tôi đã sẵn sàng",
+	spreadShuffling: "Đang trộn...",
 	spreadReveal: "Lật bài",
 	spreadConceal: "Úp bài",
 	spreadRevealAll: "Lật tất cả",

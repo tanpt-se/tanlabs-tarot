@@ -83,6 +83,7 @@ export const en: UiLabels = {
 	spreadShuffleNarration:
 		"You shuffle the deck. The cards whisper in the candlelight...",
 	spreadReady: "I am ready",
+	spreadShuffling: "Shuffling...",
 	spreadReveal: "Reveal",
 	spreadConceal: "Face down",
 	spreadRevealAll: "Reveal all",

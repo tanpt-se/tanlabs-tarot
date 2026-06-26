@@ -1,6 +1,8 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AppChrome } from "../AppChrome";
 import { GameButton } from "../GameButton";
+import { preloadCardImages } from "../../lib/tarot/card-image";
+import type { CardId } from "../../lib/tarot/deck";
 import { drawCards } from "../../lib/tarot/draw";
 import {
 	buildSpreadSummary,
@@ -10,7 +12,7 @@ import {
 	inferSpreadTypeFromCardCount,
 } from "../../lib/tarot/spread";
 import type { NarratorAdvanceConfig } from "../../lib/types/narrator-advance";
-import type { DrawnCard, Reading, SpreadType } from "../../lib/types/reading";
+import type { Reading, SpreadType } from "../../lib/types/reading";
 import { useLocale } from "../../hooks/use-locale";
 import { CardBack } from "../brand/CardBack";
 import { GameStage } from "../character/GameStage";
@@ -22,7 +24,6 @@ type SpreadPhase =
 	| "question"
 	| "setup"
 	| "shuffle"
-	| "drawing"
 	| "reveal"
 	| "complete";
 
@@ -38,12 +39,9 @@ interface SpreadScreenProps {
 	onNarratorAdvanceChange: (config: NarratorAdvanceConfig | undefined) => void;
 }
 
-const DEAL_CARD_INTERVAL_MS = 380;
-
 function inferPhase(reading: Reading): SpreadPhase {
 	if (reading.status === "complete") return "complete";
 	if (reading.cards.length > 0) return "reveal";
-	if (reading.status === "drawing") return "drawing";
 	if (reading.spreadType) return "shuffle";
 	if (!reading.question.trim()) return "question";
 	return "setup";
@@ -64,8 +62,7 @@ export function SpreadScreen({
 	const [phase, setPhase] = useState<SpreadPhase>(() => inferPhase(reading));
 	const activePhase: SpreadPhase =
 		reading.status === "complete" ? "complete" : phase;
-	const [pendingCards, setPendingCards] = useState<DrawnCard[]>([]);
-	const [dealtCount, setDealtCount] = useState(0);
+	const [shuffling, setShuffling] = useState(false);
 	const [summaryMessage, setSummaryMessage] = useState<string | undefined>(() =>
 		reading.status === "complete" && reading.interpretation
 			? reading.interpretation
@@ -85,16 +82,25 @@ export function SpreadScreen({
 	const allFlipped =
 		reading.cards.length > 0 && flippedIndices.size >= reading.cards.length;
 
+	const shufflingTimerRef = useMemo(() => ({ current: 0 }), []);
+
 	const startDrawing = useCallback(() => {
 		if (!spreadType) return;
 
-		onUpdate(reading.id, { status: "drawing", cards: [] });
-		setPhase("drawing");
-		setDealtCount(0);
-		setPendingCards(drawCards(totalCards));
-		setFlippedIndices(new Set());
-		setSummaryMessage(undefined);
-	}, [onUpdate, reading.id, spreadType, totalCards]);
+		setShuffling(true);
+		clearTimeout(shufflingTimerRef.current);
+		shufflingTimerRef.current = window.setTimeout(() => {
+			void (async () => {
+				const cards = drawCards(totalCards);
+				await preloadCardImages(cards.map((card) => card.id as CardId));
+				onUpdate(reading.id, { cards, status: "interpreting" });
+				setPhase("reveal");
+				setShuffling(false);
+				setFlippedIndices(new Set());
+				setSummaryMessage(undefined);
+			})();
+		}, 900);
+	}, [onUpdate, reading.id, spreadType, totalCards, shufflingTimerRef]);
 
 	const chooseSpread = useCallback(
 		(type: SpreadType) => {
@@ -113,42 +119,6 @@ export function SpreadScreen({
 		},
 		[onUpdate, reading.id],
 	);
-
-	useEffect(() => {
-		if (activePhase !== "drawing" || pendingCards.length === 0 || !spreadType) {
-			return;
-		}
-
-		if (dealtCount >= totalCards) {
-			return;
-		}
-
-		const timer = window.setTimeout(() => {
-			const nextCount = dealtCount + 1;
-			setDealtCount(nextCount);
-
-			if (nextCount >= totalCards) {
-				onUpdate(reading.id, {
-					cards: pendingCards,
-					status: "interpreting",
-				});
-				setPhase("reveal");
-				setPendingCards([]);
-				setDealtCount(0);
-				setSummaryMessage(undefined);
-			}
-		}, DEAL_CARD_INTERVAL_MS);
-
-		return () => window.clearTimeout(timer);
-	}, [
-		activePhase,
-		dealtCount,
-		onUpdate,
-		pendingCards,
-		reading.id,
-		spreadType,
-		totalCards,
-	]);
 
 	const handleCardPress = useCallback((index: number) => {
 		setFlippedIndices((prev) => {
@@ -185,8 +155,6 @@ export function SpreadScreen({
 				return labels.narratorSpreadSetup;
 			case "shuffle":
 				return labels.narratorSpreadShuffle;
-			case "drawing":
-				return labels.narratorSpreadDrawing;
 			case "reveal":
 				return allFlipped
 					? labels.narratorSpreadInterpret
@@ -227,12 +195,12 @@ export function SpreadScreen({
 		summaryMessage,
 	]);
 
-	useLayoutEffect(() => {
+	useEffect(() => {
 		onNarratorMessageChange(narratorMessage);
 		return () => onNarratorMessageChange(undefined);
 	}, [narratorMessage, onNarratorMessageChange]);
 
-	useLayoutEffect(() => {
+	useEffect(() => {
 		onNarratorAdvanceChange(narratorAdvance);
 		return () => onNarratorAdvanceChange(undefined);
 	}, [narratorAdvance, onNarratorAdvanceChange]);
@@ -313,44 +281,28 @@ export function SpreadScreen({
 
 				{activePhase === "shuffle" && (
 					<div className="spread-phase spread-phase--center">
-						<div className="spread-shuffle">
+						<div
+							className="spread-shuffle"
+							data-shuffling={shuffling ? "true" : undefined}
+						>
 							<CardBack size="spread" alt={labels.cardBackAlt} />
 							<CardBack size="spread" alt={labels.cardBackAlt} />
 							<CardBack size="spread" alt={labels.cardBackAlt} />
 						</div>
 						<p className="spread-phase__narration">
-							{labels.spreadShuffleNarration}
+							{shuffling
+								? labels.spreadShuffleNarration
+								: labels.narratorSpreadShuffle
+							}
 						</p>
-						<GameButton tone="primary" layout="text" onClick={startDrawing}>
-							{labels.spreadReady}
+						<GameButton
+							tone="primary"
+							layout="text"
+							onClick={startDrawing}
+							disabled={shuffling}
+						>
+							{shuffling ? labels.spreadShuffling : labels.spreadReady}
 						</GameButton>
-					</div>
-				)}
-
-				{activePhase === "drawing" && (
-					<div className="spread-phase spread-phase--center">
-						{dealtCount < totalCards && (
-							<div className="spread-shuffle spread-shuffle--active">
-								<CardBack size="spread" alt={labels.cardBackAlt} />
-							</div>
-						)}
-						<p className="spread-phase__narration">
-							{labels.spreadDealingCards(dealtCount, totalCards)}
-						</p>
-						{dealtCount > 0 && (
-							<div
-								className="spread-board spread-board--dealing"
-								data-count={totalCards}
-							>
-								{pendingCards.slice(0, dealtCount).map((card, index) => (
-									<TarotCard
-										key={`${card.id}-${index}`}
-										card={card}
-										flipped={false}
-									/>
-								))}
-							</div>
-						)}
 					</div>
 				)}
 
@@ -364,8 +316,10 @@ export function SpreadScreen({
 								<TarotCard
 									key={`${card.id}-${index}`}
 									card={card}
+									index={index}
+									dealIndex={index}
 									flipped={flippedIndices.has(index)}
-									onPress={() => handleCardPress(index)}
+									onPress={handleCardPress}
 								/>
 							))}
 						</div>

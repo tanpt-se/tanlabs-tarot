@@ -30,45 +30,45 @@ export function useTypewriterText(
 		cancelledRef.current = false;
 
 		let index = 0;
-		const timeoutIds: number[] = [];
+		let rafId = 0;
+		let startTimeoutId = 0;
+		let lastTick = 0;
 
-		const schedule = (callback: () => void, delay: number) => {
-			const id = window.setTimeout(() => {
-				if (!cancelledRef.current) callback();
-			}, delay);
-			timeoutIds.push(id);
+		const stop = () => {
+			cancelledRef.current = true;
+			window.clearTimeout(startTimeoutId);
+			window.cancelAnimationFrame(rafId);
 		};
 
-		schedule(() => {
+		startTimeoutId = window.setTimeout(() => {
 			if (cancelledRef.current) return;
 
 			setDisplayed("");
 			setIsTyping(text.length > 0);
+			lastTick = performance.now();
 
-			const typeNext = () => {
+			const tick = (now: number) => {
 				if (cancelledRef.current) return;
 
-				index += 1;
-				setDisplayed(text.slice(0, index));
+				if (now - lastTick >= speedMs) {
+					index += 1;
+					setDisplayed(text.slice(0, index));
+					lastTick = now;
+				}
 
 				if (index < text.length) {
-					schedule(typeNext, speedMs);
+					rafId = window.requestAnimationFrame(tick);
 				} else {
 					setIsTyping(false);
 				}
 			};
 
 			if (text.length > 0) {
-				typeNext();
+				rafId = window.requestAnimationFrame(tick);
 			}
 		}, startDelayMs);
 
-		return () => {
-			cancelledRef.current = true;
-			for (const id of timeoutIds) {
-				window.clearTimeout(id);
-			}
-		};
+		return stop;
 	}, [text, speedMs, startDelayMs]);
 
 	if (getReducedMotion()) {

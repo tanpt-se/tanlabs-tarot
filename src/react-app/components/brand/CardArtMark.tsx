@@ -1,16 +1,15 @@
 import type { CardImage } from "../../assets/cards";
-import { MAJOR } from "../../assets/cards";
 
 interface CardArtMarkProps {
-	src?: CardImage;
+	src: CardImage;
 	alt?: string;
 	size?: "hero" | "thumb" | "avatar" | "spread";
 	reversed?: boolean;
 }
 
 export function CardArtMark({
-	src = MAJOR.THE_FOOL,
-	alt = "The Fool",
+	src,
+	alt = "",
 	size = "hero",
 	reversed = false,
 }: CardArtMarkProps) {
@@ -20,7 +19,13 @@ export function CardArtMark({
 			data-reversed={reversed}
 		>
 			<div className="card-frame">
-				<img className="card-frame__image" src={src} alt={alt} />
+				<img
+					className="card-frame__image"
+					src={src}
+					alt={alt}
+					loading="lazy"
+					decoding="async"
+				/>
 			</div>
 		</div>
 	);

@@ -125,7 +125,6 @@ function App() {
 				>
 					{narratorMessage ? (
 						<NarratorBar
-							key={narratorMessage}
 							message={narratorMessage}
 							onTypingChange={setNarratorTyping}
 							onSkipChange={setNarratorSkip}
