@@ -5,6 +5,7 @@ interface CardArtMarkProps {
 	alt?: string;
 	size?: "hero" | "thumb" | "avatar" | "spread";
 	reversed?: boolean;
+	eager?: boolean;
 }
 
 export function CardArtMark({
@@ -12,6 +13,7 @@ export function CardArtMark({
 	alt = "",
 	size = "hero",
 	reversed = false,
+	eager = false,
 }: CardArtMarkProps) {
 	return (
 		<div
@@ -23,7 +25,7 @@ export function CardArtMark({
 					className="card-frame__image"
 					src={src}
 					alt={alt}
-					loading="lazy"
+					loading={eager ? "eager" : "lazy"}
 					decoding="async"
 				/>
 			</div>

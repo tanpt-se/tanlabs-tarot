@@ -15,6 +15,7 @@ export function SelfViewDeckScreen() {
 		drawnCards,
 		flippedIndices,
 		shuffling,
+		revealingIndex,
 		isViewingHistory,
 		displayedCards,
 		shuffleDeck,
@@ -58,7 +59,12 @@ export function SelfViewDeckScreen() {
 						className="self-view-deck__stack"
 						data-shuffling={shuffling}
 						onClick={shuffleDeck}
-						disabled={isViewingHistory || shuffling || deck.length === 0}
+						disabled={
+							isViewingHistory ||
+							shuffling ||
+							revealingIndex !== null ||
+							deck.length === 0
+						}
 						aria-busy={shuffling}
 						aria-label={labels.selfViewShuffleDeck}
 					>
@@ -82,10 +88,16 @@ export function SelfViewDeckScreen() {
 							layout="nav"
 							className="self-view-deck__draw"
 							onClick={drawOne}
-							disabled={isViewingHistory || deck.length === 0}
+							disabled={
+								isViewingHistory ||
+								revealingIndex !== null ||
+								deck.length === 0
+							}
 						>
 							<span className="game-button__label">
-								{labels.selfViewDrawOne}
+								{revealingIndex !== null
+									? labels.loading
+									: labels.selfViewDrawOne}
 							</span>
 						</GameButton>
 					</div>
@@ -112,6 +124,7 @@ export function SelfViewDeckScreen() {
 									key={`${card.id}-${index}`}
 									card={card}
 									index={index}
+									revealLoading={revealingIndex === index}
 									flipped={
 										isViewingHistory ? true : flippedIndices.has(index)
 									}

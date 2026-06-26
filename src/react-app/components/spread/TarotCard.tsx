@@ -5,12 +5,14 @@ import type { CardId } from "../../lib/tarot/deck";
 import { useLocale } from "../../hooks/use-locale";
 import { CardBack } from "../brand/CardBack";
 import { CardArtMark } from "../brand/CardArtMark";
+import { CardFrontSkeleton } from "../brand/CardFrontSkeleton";
 
 interface TarotCardProps {
 	card: DrawnCard;
 	flipped: boolean;
 	index?: number;
 	dealIndex?: number;
+	revealLoading?: boolean;
 	onPress?: (index: number) => void;
 }
 
@@ -23,15 +25,18 @@ export const TarotCard = memo(function TarotCard({
 	flipped,
 	index = 0,
 	dealIndex,
+	revealLoading = false,
 	onPress,
 }: TarotCardProps) {
 	const { labels } = useLocale();
 	const cardId = card.id as CardId;
 	const [imageSrc, setImageSrc] = useState<string | undefined>(() =>
-		flipped ? getCardImage(cardId) : undefined,
+		flipped || revealLoading ? getCardImage(cardId) : undefined,
 	);
 	const [hovering, setHovering] = useState(false);
 	const previewUpright = hovering && flipped && card.reversed;
+	const interactive = Boolean(onPress) && !revealLoading;
+	const shouldLoadFront = flipped || revealLoading;
 
 	const style = useMemo(
 		() =>
@@ -42,10 +47,7 @@ export const TarotCard = memo(function TarotCard({
 	);
 
 	useEffect(() => {
-		if (!flipped) {
-			setImageSrc(undefined);
-			return;
-		}
+		if (!shouldLoadFront) return;
 
 		const cached = getCardImage(cardId);
 		if (cached) {
@@ -63,7 +65,7 @@ export const TarotCard = memo(function TarotCard({
 		return () => {
 			cancelled = true;
 		};
-	}, [cardId, flipped]);
+	}, [cardId, shouldLoadFront]);
 
 	const handleClick = useCallback(() => {
 		onPress?.(index);
@@ -79,18 +81,29 @@ export const TarotCard = memo(function TarotCard({
 	}, []);
 
 	return (
-		<div className="tarot-card" style={style}>
+		<div
+			className="tarot-card"
+			style={style}
+			data-reveal-loading={revealLoading ? "true" : undefined}
+		>
 			<button
 				type="button"
 				className="tarot-card__flip"
 				data-flipped={flipped}
 				data-reversed={card.reversed}
 				data-preview-upright={previewUpright ? "true" : undefined}
-				onClick={onPress ? handleClick : undefined}
+				onClick={interactive ? handleClick : undefined}
 				onPointerEnter={handlePointerEnter}
 				onPointerLeave={handlePointerLeave}
-				disabled={!onPress}
-				aria-label={flipped ? labels.spreadConceal : labels.spreadReveal}
+				disabled={!interactive}
+				aria-busy={revealLoading}
+				aria-label={
+					revealLoading
+						? labels.loading
+						: flipped
+							? labels.spreadConceal
+							: labels.spreadReveal
+				}
 				aria-pressed={flipped}
 			>
 				<div className="tarot-card__inner">
@@ -101,18 +114,24 @@ export const TarotCard = memo(function TarotCard({
 							reversed={card.reversed}
 						/>
 					</div>
-					{flipped && imageSrc ? (
+					{imageSrc ? (
 						<div className="tarot-card__face tarot-card__face--front">
 							<CardArtMark
 								src={imageSrc}
 								alt=""
 								size="spread"
 								reversed={card.reversed}
+								eager
 							/>
 						</div>
 					) : null}
 				</div>
 			</button>
+			{revealLoading ? (
+				<div className="tarot-card__reveal-skeleton" aria-hidden="true">
+					<CardFrontSkeleton size="spread" />
+				</div>
+			) : null}
 		</div>
 	);
 });
