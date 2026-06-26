@@ -1,4 +1,5 @@
-import type { CardImage } from "../../assets/cards";
+import { useLayoutEffect, useRef } from "react";
+import type { CardImage } from "../../lib/tarot/card-image";
 
 interface CardArtMarkProps {
 	src: CardImage;
@@ -6,6 +7,7 @@ interface CardArtMarkProps {
 	size?: "hero" | "thumb" | "avatar" | "spread";
 	reversed?: boolean;
 	eager?: boolean;
+	onLoad?: () => void;
 }
 
 export function CardArtMark({
@@ -14,7 +16,17 @@ export function CardArtMark({
 	size = "hero",
 	reversed = false,
 	eager = false,
+	onLoad,
 }: CardArtMarkProps) {
+	const imgRef = useRef<HTMLImageElement>(null);
+
+	useLayoutEffect(() => {
+		const img = imgRef.current;
+		if (img?.complete && img.naturalWidth > 0) {
+			onLoad?.();
+		}
+	}, [onLoad, src]);
+
 	return (
 		<div
 			className={`card-art-mark card-art-mark--${size}`}
@@ -22,11 +34,14 @@ export function CardArtMark({
 		>
 			<div className="card-frame">
 				<img
+					ref={imgRef}
 					className="card-frame__image"
 					src={src}
 					alt={alt}
 					loading={eager ? "eager" : "lazy"}
 					decoding="async"
+					fetchPriority={eager ? "high" : "low"}
+					onLoad={onLoad}
 				/>
 			</div>
 		</div>

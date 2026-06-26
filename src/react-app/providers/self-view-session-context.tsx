@@ -1,6 +1,7 @@
 import {
 	createContext,
 	useCallback,
+	useEffect,
 	useMemo,
 	useRef,
 	useState,
@@ -16,7 +17,7 @@ import {
 	createFreshDeckState,
 } from "../lib/self-view/deck-state";
 import { drawOneCard, reshuffleDeck } from "../lib/tarot/draw";
-import { loadCardImage } from "../lib/tarot/card-image";
+import { loadCardImage, preloadTopOfDeck } from "../lib/tarot/card-image";
 import type { CardId } from "../lib/tarot/deck";
 import type { DrawnCard } from "../lib/types/reading";
 import type { SelfViewSession } from "../lib/types/self-view-session";
@@ -35,6 +36,8 @@ type SelfViewSessionContextValue = {
 	setViewingSessionId: (id: string | null) => void;
 	shuffleDeck: () => void;
 	drawOne: () => void;
+	completeCardReveal: (index: number) => void;
+	completeRevealFlip: (index: number) => void;
 	toggleCardFlip: (index: number) => void;
 	backToCurrent: () => void;
 	resetLiveSpread: () => void;
@@ -46,6 +49,8 @@ type SelfViewSessionContextValue = {
 const SelfViewSessionContext = createContext<SelfViewSessionContextValue | null>(
 	null,
 );
+
+const SELF_VIEW_REVEAL_FLIP_MS = 560;
 
 function useSelfViewHistoryState() {
 	const [sessions, setSessions] = useState<SelfViewSession[]>(
@@ -89,6 +94,14 @@ export function SelfViewSessionProvider({ children }: { children: ReactNode }) {
 	const [revealingIndex, setRevealingIndex] = useState<number | null>(null);
 	const overlayCountRef = useRef(0);
 	const revealGenerationRef = useRef(0);
+	const revealingIndexRef = useRef<number | null>(null);
+	const revealClearTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(
+		undefined,
+	);
+
+	useEffect(() => {
+		revealingIndexRef.current = revealingIndex;
+	}, [revealingIndex]);
 
 	const viewingSession = useMemo(
 		() => sessions.find((session) => session.id === viewingSessionId) ?? null,
@@ -111,6 +124,10 @@ export function SelfViewSessionProvider({ children }: { children: ReactNode }) {
 
 	const resetLiveSpread = useCallback(() => {
 		revealGenerationRef.current += 1;
+		if (revealClearTimeoutRef.current) {
+			clearTimeout(revealClearTimeoutRef.current);
+			revealClearTimeoutRef.current = undefined;
+		}
 		const fresh = createFreshDeckState();
 		setDeck(fresh.deck);
 		setDrawnCards(fresh.drawnCards);
@@ -132,7 +149,11 @@ export function SelfViewSessionProvider({ children }: { children: ReactNode }) {
 
 		setShuffling(true);
 		window.setTimeout(() => {
-			setDeck((current) => reshuffleDeck(current));
+			setDeck((current) => {
+				const next = reshuffleDeck(current);
+				preloadTopOfDeck(next);
+				return next;
+			});
 			setShuffling(false);
 		}, SELF_VIEW_SHUFFLE_MS);
 	}, [deck.length, isViewingHistory, revealingIndex, shuffling]);
@@ -144,28 +165,60 @@ export function SelfViewSessionProvider({ children }: { children: ReactNode }) {
 		if (!result) return;
 
 		const nextIndex = drawnCards.length;
-		const generation = revealGenerationRef.current;
 		setDeck(result.deck);
 		setDrawnCards((current) => [...current, result.card]);
 		setRevealingIndex(nextIndex);
+		void loadCardImage(result.card.id as CardId);
+	}, [deck, drawnCards.length, isViewingHistory, revealingIndex]);
 
-		const completeReveal = () => {
-			if (generation !== revealGenerationRef.current) return;
+	const clearRevealLock = useCallback((index: number) => {
+		if (revealingIndexRef.current !== index) return;
 
+		if (revealClearTimeoutRef.current) {
+			clearTimeout(revealClearTimeoutRef.current);
+			revealClearTimeoutRef.current = undefined;
+		}
+
+		setRevealingIndex(null);
+	}, []);
+
+	const completeCardReveal = useCallback(
+		(index: number) => {
+			if (revealingIndexRef.current !== index) return;
+
+			const generation = revealGenerationRef.current;
 			window.requestAnimationFrame(() => {
 				if (generation !== revealGenerationRef.current) return;
 
-				setFlippedIndices((current) => {
-					const next = new Set(current);
-					next.add(nextIndex);
-					return next;
-				});
-				setRevealingIndex(null);
-			});
-		};
+				window.requestAnimationFrame(() => {
+					if (generation !== revealGenerationRef.current) return;
 
-		void loadCardImage(result.card.id as CardId).then(completeReveal).catch(completeReveal);
-	}, [deck, drawnCards.length, isViewingHistory, revealingIndex]);
+					setFlippedIndices((current) => {
+						const next = new Set(current);
+						next.add(index);
+						return next;
+					});
+
+					if (revealClearTimeoutRef.current) {
+						clearTimeout(revealClearTimeoutRef.current);
+					}
+
+					revealClearTimeoutRef.current = setTimeout(() => {
+						if (generation !== revealGenerationRef.current) return;
+						clearRevealLock(index);
+					}, SELF_VIEW_REVEAL_FLIP_MS);
+				});
+			});
+		},
+		[clearRevealLock],
+	);
+
+	const completeRevealFlip = useCallback(
+		(index: number) => {
+			clearRevealLock(index);
+		},
+		[clearRevealLock],
+	);
 
 	const toggleCardFlip = useCallback(
 		(index: number) => {
@@ -193,6 +246,8 @@ export function SelfViewSessionProvider({ children }: { children: ReactNode }) {
 			setViewingSessionId,
 			shuffleDeck,
 			drawOne,
+			completeCardReveal,
+			completeRevealFlip,
 			toggleCardFlip,
 			backToCurrent,
 			resetLiveSpread,
@@ -212,6 +267,8 @@ export function SelfViewSessionProvider({ children }: { children: ReactNode }) {
 			revealingIndex,
 			shuffleDeck,
 			drawOne,
+			completeCardReveal,
+			completeRevealFlip,
 			toggleCardFlip,
 			backToCurrent,
 			resetLiveSpread,

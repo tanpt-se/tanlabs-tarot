@@ -35,11 +35,13 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
 	const [volume, setVolumeState] = useState(readStoredVolume);
 	const [playing, setPlaying] = useState(false);
 
-	useEffect(() => {
+	const ensureAudio = useCallback(() => {
+		if (audioRef.current) return audioRef.current;
+
 		const audio = new Audio(MUSIC_SRC);
 		audio.loop = true;
-		audio.volume = readStoredVolume();
-		audio.preload = "auto";
+		audio.volume = volume;
+		audio.preload = "none";
 
 		const onPlay = () => setPlaying(true);
 		const onPause = () => setPlaying(false);
@@ -47,14 +49,8 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
 		audio.addEventListener("pause", onPause);
 
 		audioRef.current = audio;
-
-		return () => {
-			audio.removeEventListener("play", onPlay);
-			audio.removeEventListener("pause", onPause);
-			audio.pause();
-			audioRef.current = null;
-		};
-	}, []);
+		return audio;
+	}, [volume]);
 
 	useEffect(() => {
 		if (audioRef.current) {
@@ -64,15 +60,14 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
 
 	useEffect(() => {
 		localStorage.setItem(MUSIC_STORAGE_KEY, String(enabled));
-		const audio = audioRef.current;
-		if (!audio) return;
-
-		if (enabled) {
-			void audio.play().catch(() => undefined);
-		} else {
-			audio.pause();
+		if (!enabled) {
+			audioRef.current?.pause();
+			return;
 		}
-	}, [enabled]);
+
+		const audio = ensureAudio();
+		void audio.play().catch(() => undefined);
+	}, [enabled, ensureAudio]);
 
 	const toggle = useCallback(() => {
 		setEnabled((current) => !current);

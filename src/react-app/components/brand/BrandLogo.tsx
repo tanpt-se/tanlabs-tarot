@@ -1,5 +1,5 @@
 import type { ImgHTMLAttributes } from "react";
-import { BRAND_LOGO } from "../../assets/brand";
+import { BRAND_LOGO } from "../../assets";
 
 interface BrandLogoProps extends Omit<ImgHTMLAttributes<HTMLImageElement>, "src" | "alt"> {
 	alt?: string;

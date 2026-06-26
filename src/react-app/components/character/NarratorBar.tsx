@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { NARRATOR_SPRITE } from "../../assets/characters";
+import { NARRATOR_SPRITE } from "../../assets";
 import { useTypewriterText } from "../../hooks/use-typewriter-text";
 import { useLocale } from "../../hooks/use-locale";
 

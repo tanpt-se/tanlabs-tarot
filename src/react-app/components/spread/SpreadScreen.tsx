@@ -89,10 +89,15 @@ export function SpreadScreen({
 
 		setShuffling(true);
 		clearTimeout(shufflingTimerRef.current);
+
+		const cards = drawCards(totalCards);
+		const preloadPromise = preloadCardImages(
+			cards.map((card) => card.id as CardId),
+		);
+
 		shufflingTimerRef.current = window.setTimeout(() => {
 			void (async () => {
-				const cards = drawCards(totalCards);
-				await preloadCardImages(cards.map((card) => card.id as CardId));
+				await preloadPromise;
 				onUpdate(reading.id, { cards, status: "interpreting" });
 				setPhase("reveal");
 				setShuffling(false);

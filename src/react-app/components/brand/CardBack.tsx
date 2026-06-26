@@ -1,4 +1,4 @@
-import { CARD_BACK } from "../../assets/brand";
+import { CARD_BACK } from "../../assets";
 
 interface CardBackProps {
 	alt?: string;

@@ -3,7 +3,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 interface UseTypewriterTextOptions {
 	speedMs?: number;
 	startDelayMs?: number;
+	/** Skip animation — for long text or complete-phase summaries */
+	instant?: boolean;
 }
+
+const INSTANT_CHAR_THRESHOLD = 120;
 
 function getReducedMotion(): boolean {
 	if (typeof window === "undefined") return false;
@@ -12,7 +16,7 @@ function getReducedMotion(): boolean {
 
 export function useTypewriterText(
 	text: string,
-	{ speedMs = 26, startDelayMs = 120 }: UseTypewriterTextOptions = {},
+	{ speedMs = 26, startDelayMs = 120, instant = false }: UseTypewriterTextOptions = {},
 ) {
 	const [displayed, setDisplayed] = useState("");
 	const [isTyping, setIsTyping] = useState(false);
@@ -24,8 +28,15 @@ export function useTypewriterText(
 		setIsTyping(false);
 	}, [text]);
 
+	const useInstant =
+		instant || getReducedMotion() || text.length > INSTANT_CHAR_THRESHOLD;
+
 	useEffect(() => {
-		if (getReducedMotion()) return;
+		if (useInstant) {
+			setDisplayed(text);
+			setIsTyping(false);
+			return;
+		}
 
 		cancelledRef.current = false;
 
@@ -51,7 +62,8 @@ export function useTypewriterText(
 				if (cancelledRef.current) return;
 
 				if (now - lastTick >= speedMs) {
-					index += 1;
+					const elapsedSteps = Math.max(1, Math.floor((now - lastTick) / speedMs));
+					index = Math.min(text.length, index + elapsedSteps);
 					setDisplayed(text.slice(0, index));
 					lastTick = now;
 				}
@@ -69,9 +81,9 @@ export function useTypewriterText(
 		}, startDelayMs);
 
 		return stop;
-	}, [text, speedMs, startDelayMs]);
+	}, [text, speedMs, startDelayMs, useInstant]);
 
-	if (getReducedMotion()) {
+	if (useInstant) {
 		return { displayed: text, isTyping: false, skip };
 	}
 

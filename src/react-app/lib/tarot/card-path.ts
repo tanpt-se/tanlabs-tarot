@@ -4,7 +4,7 @@ import { isMajorCard } from "./deck-ids";
 const MINOR_PATTERN =
 	/^(ACE|TWO|THREE|FOUR|FIVE|SIX|SEVEN|EIGHT|NINE|TEN|PAGE|KNIGHT|QUEEN|KING)_OF_(WANDS|CUPS|SWORDS|PENTACLES)$/;
 
-/** Relative path under assets/cards/ for Vite glob keys */
+/** Public URL path segment under /cards/ */
 export function cardIdToAssetRelativePath(id: CardId): string {
 	if (isMajorCard(id)) {
 		if (id.startsWith("THE_")) {
@@ -22,6 +22,8 @@ export function cardIdToAssetRelativePath(id: CardId): string {
 	return `minor/${suit.toLowerCase()}/${rank.toLowerCase()}.webp`;
 }
 
-export function cardIdToGlobKey(id: CardId): string {
-	return `../../assets/cards/${cardIdToAssetRelativePath(id)}`;
+const cardsBaseUrl = `${import.meta.env.BASE_URL}cards/`;
+
+export function cardIdToPublicUrl(id: CardId): string {
+	return `${cardsBaseUrl}${cardIdToAssetRelativePath(id)}`;
 }

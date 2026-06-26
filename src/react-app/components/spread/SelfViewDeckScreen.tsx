@@ -1,6 +1,7 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useLocale } from "../../hooks/use-locale";
 import { useEscapeKey } from "../../hooks/useEscapeKey";
+import { preloadTopOfDeck } from "../../lib/tarot/card-image";
 import { useSelfViewSession } from "../../hooks/useSelfViewSession";
 import { CardBack } from "../brand/CardBack";
 import { GameButton } from "../GameButton";
@@ -20,6 +21,8 @@ export function SelfViewDeckScreen() {
 		displayedCards,
 		shuffleDeck,
 		drawOne,
+		completeCardReveal,
+		completeRevealFlip,
 		toggleCardFlip,
 		backToCurrent,
 		resetLiveSpread,
@@ -49,6 +52,16 @@ export function SelfViewDeckScreen() {
 	}, [backToCurrent, hasOverlayOpen, isViewingHistory]);
 
 	useEscapeKey(handleEscapeToCurrent, isViewingHistory);
+
+	useEffect(() => {
+		if (!isViewingHistory && deck.length > 0) {
+			preloadTopOfDeck(deck);
+		}
+	}, [deck, isViewingHistory]);
+
+	const warmNextDraw = useCallback(() => {
+		preloadTopOfDeck(deck);
+	}, [deck]);
 
 	return (
 		<>
@@ -88,6 +101,8 @@ export function SelfViewDeckScreen() {
 							layout="nav"
 							className="self-view-deck__draw"
 							onClick={drawOne}
+							onPointerEnter={warmNextDraw}
+							onFocus={warmNextDraw}
 							disabled={
 								isViewingHistory ||
 								revealingIndex !== null ||
@@ -125,6 +140,9 @@ export function SelfViewDeckScreen() {
 									card={card}
 									index={index}
 									revealLoading={revealingIndex === index}
+									onRevealReady={completeCardReveal}
+									onRevealFlipComplete={completeRevealFlip}
+									loadWhenVisible={isViewingHistory}
 									flipped={
 										isViewingHistory ? true : flippedIndices.has(index)
 									}
