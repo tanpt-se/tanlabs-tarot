@@ -34,10 +34,99 @@
 	--input: color-mix(in srgb, var(--palette-ink) 12%, transparent);
 	--ring: var(--palette-ink);
 	--font-size-root: 16px;
-	--font-family: "Noto Serif", Georgia, serif;
+	--font-family: "Fredoka", "Nunito", system-ui, sans-serif;
+	--font-weight-regular: 500;
+	--font-weight-semibold: 600;
+	--font-weight-bold: 700;
+	--font-weight-heavy: 800;
+	--letter-spacing-ui: 0.02em;
+	--letter-spacing-button: 0.04em;
+
+	/* Casual game UI buttons — cream primary + wood secondary */
+	--game-btn-radius: 1.25rem;
+	--game-btn-border-width: 3px;
+	--game-btn-bg: linear-gradient(
+		180deg,
+		#fff7e9 0%,
+		#fceed8 45%,
+		#f2dfc1 100%
+	);
+	--game-btn-border: #c7a174;
+	--game-btn-shadow-rim: rgba(142, 92, 51, 0.42);
+	--game-btn-shadow-soft: rgba(74, 44, 20, 0.16);
+	--game-btn-text: #6e4325;
+	--game-btn-text-muted: color-mix(in srgb, var(--game-btn-text) 62%, #a88460);
+	--game-btn-inset:
+		inset 0 2px 0 rgba(255, 255, 255, 0.85),
+		inset 0 -2px 0 rgba(165, 120, 65, 0.35);
+	--game-btn-outer:
+		0 5px 0 var(--game-btn-shadow-rim),
+		0 9px 18px var(--game-btn-shadow-soft),
+		0 2px 4px rgba(0, 0, 0, 0.06);
+	--game-btn-outer-active:
+		0 2px 0 rgba(142, 92, 51, 0.34),
+		0 4px 10px rgba(74, 44, 20, 0.12);
+	--game-btn-text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
+	--game-btn-shine: linear-gradient(
+		180deg,
+		rgba(255, 255, 255, 0.75),
+		rgba(255, 255, 255, 0)
+	);
+	--game-btn-wood-bg: linear-gradient(
+		180deg,
+		#d9a868 0%,
+		#c08850 45%,
+		#a06a38 100%
+	);
+	--game-btn-wood-border: #7a4e28;
+	--game-btn-wood-shadow-rim: rgba(74, 44, 20, 0.48);
+	--game-btn-wood-shadow-soft: rgba(40, 22, 8, 0.18);
+	--game-btn-wood-outer:
+		0 5px 0 var(--game-btn-wood-shadow-rim),
+		0 9px 18px var(--game-btn-wood-shadow-soft),
+		0 2px 4px rgba(0, 0, 0, 0.07);
+	--game-btn-wood-outer-active:
+		0 2px 0 rgba(74, 44, 20, 0.38),
+		0 4px 10px rgba(40, 22, 8, 0.14);
+	--game-btn-wood-text: #fff6e8;
+	--game-btn-wood-inset:
+		inset 0 2px 0 rgba(255, 235, 200, 0.45),
+		inset 0 -2px 0 rgba(80, 45, 20, 0.45);
+	--game-btn-wood-text-shadow: 0 1px 0 rgba(60, 30, 10, 0.35);
+	--game-btn-wood-shine: linear-gradient(
+		180deg,
+		rgba(255, 255, 255, 0.35),
+		rgba(255, 255, 255, 0)
+	);
+	--game-btn-featured-bg: linear-gradient(
+		180deg,
+		#fff9ee 0%,
+		#fdeed0 40%,
+		#f5e0b0 100%
+	);
+	--game-btn-featured-border: #d4aa6a;
+	--game-btn-featured-shadow-rim: rgba(154, 104, 56, 0.44);
+	--game-btn-featured-shadow-soft: rgba(90, 58, 28, 0.17);
+
+	--btn-border-width: 3px;
+	--btn-radius-pill: var(--game-btn-radius);
+	--btn-radius: var(--game-btn-radius);
 
 	--frame-corner: 1rem;
-	--button-height: 2.75rem;
+	--button-height: 3.85rem;
+	--game-btn-label-size: 1.3rem;
+	--game-btn-label-size-stack: 1.3rem;
+	--game-btn-sublabel-size: 0.78rem;
+	--game-btn-code-size: 0.8rem;
+	--game-btn-frame-px: 1.5rem;
+	--game-btn-frame-gap: 0.6rem;
+	--game-btn-stack-min-height: 5.75rem;
+	--game-menu-item-min-height: 4.15rem;
+	--game-menu-item-label-size: 1.3rem;
+
+	--home-menu-width: min(26rem, 92vw);
+	--home-menu-panel-padding: 2rem;
+	--home-playfield-inset-x: clamp(1rem, 4vw, 1.5rem);
 	--frame-side: 1rem;
 	--frame-top: var(--frame-side);
 	--frame-bottom: 1rem;
@@ -46,13 +135,62 @@
 	--game-modal-height: 32rem;
 
 	--chrome-nav-button-width: var(--button-height);
+	--chrome-nav-label-size: 0.8rem;
 	--chrome-nav-gap: 0.5rem;
 	--chrome-nav-inset: calc(
 		var(--frame-side) + var(--chrome-nav-button-width) + var(--chrome-nav-gap)
 	);
 
-	--layer-sun: 0;
 	--layer-content: 1;
+
+	--z-self-view-zoom: 20;
+	--z-self-view-draw: 12;
+	--z-toast: 40;
+	--z-history-drawer: 48;
+	--z-modal: 55;
+	--z-loading: 70;
+}
+
+/* Tarot Quest — Mystic theme */
+[data-theme="mystic"] {
+	color-scheme: dark;
+
+	--palette-forest: #0b1026;
+	--palette-crimson: #ff5acd;
+	--palette-gold: #d9b96e;
+	--palette-gold-dark: #8f7340;
+	--palette-gold-light: #e8d4a8;
+	--palette-gold-pale: #f0e6c8;
+	--palette-ink: #ffffff;
+	--palette-paper: #0b1026;
+	--palette-paper-muted: #141b3d;
+
+	--palette-sun: #65e6ff;
+	--palette-sun-soft: #6f5bff;
+	--palette-sky: #1a2248;
+
+	--background: #0b1026;
+	--foreground: #ffffff;
+	--card: #141b3d;
+	--card-foreground: #ffffff;
+	--primary: #6f5bff;
+	--primary-foreground: #ffffff;
+	--secondary: #1a2248;
+	--secondary-foreground: #ffffff;
+	--muted: #1a2248;
+	--muted-foreground: #a8b0d4;
+	--accent: #65e6ff;
+	--accent-foreground: #0b1026;
+	--highlight: #d9b96e;
+	--destructive: #ff5acd;
+	--border: color-mix(in srgb, #6f5bff 55%, transparent);
+	--border-soft: color-mix(in srgb, #65e6ff 18%, transparent);
+	--input: color-mix(in srgb, #ffffff 10%, transparent);
+	--ring: #65e6ff;
+
+	--glow-primary: 0 0 24px color-mix(in srgb, #6f5bff 45%, transparent);
+	--glow-cyan: 0 0 20px color-mix(in srgb, #65e6ff 35%, transparent);
+	--glow-gold: 0 0 16px color-mix(in srgb, #d9b96e 30%, transparent);
 }
 
 @media (max-width: 640px) {
@@ -78,61 +216,24 @@ html {
 	overflow: hidden;
 }
 
+[data-theme="mystic"] {
+	color-scheme: dark;
+}
+
 body {
 	margin: 0;
 	min-width: 320px;
 	height: 100%;
 	max-height: 100vh;
 	overflow: hidden;
-	background:
-		radial-gradient(
-			ellipse at 50% 45%,
-			color-mix(in srgb, var(--palette-paper) 94%, white) 0%,
-			color-mix(in srgb, var(--palette-paper-muted) 90%, transparent) 70%,
-			color-mix(in srgb, var(--palette-paper-muted) 92%, var(--palette-ink)) 100%
-		),
-		radial-gradient(
-			circle at 15% 12%,
-			color-mix(in srgb, var(--palette-gold) 14%, transparent),
-			transparent 38%
-		),
-		radial-gradient(
-			circle at 85% 18%,
-			color-mix(in srgb, var(--palette-gold-light) 12%, transparent),
-			transparent 32%
-		),
-		var(--background);
+	background: #0a0810;
 	color: var(--foreground);
 	font-family: var(--font-family);
 	font-size: 1rem;
-	line-height: 1.6;
+	font-weight: var(--font-weight-regular);
+	line-height: 1.45;
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
-}
-
-body::before {
-	content: "";
-	position: fixed;
-	inset: 0;
-	pointer-events: none;
-	opacity: 0.14;
-	mix-blend-mode: multiply;
-	background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.78' numOctaves='5' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
-	background-size: 256px 256px;
-	z-index: 0;
-}
-
-body::after {
-	content: "";
-	position: fixed;
-	inset: 0;
-	pointer-events: none;
-	background: radial-gradient(
-		ellipse at 50% 48%,
-		transparent 42%,
-		color-mix(in srgb, var(--palette-ink) 7%, transparent) 100%
-	);
-	z-index: 0;
 }
 
 #root {
@@ -146,17 +247,23 @@ body::after {
 
 h1,
 h2,
-h3 {
-	font-weight: 700;
+h3,
+h4 {
+	font-family: var(--font-family);
+	font-weight: var(--font-weight-bold);
+	letter-spacing: var(--letter-spacing-ui);
 }
 
 button,
+input,
 textarea,
+select,
 label {
-	font: inherit;
+	font-family: var(--font-family);
 }
 
 button {
+	font: inherit;
 	cursor: pointer;
 	color: inherit;
 }

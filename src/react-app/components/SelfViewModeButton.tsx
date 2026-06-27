@@ -11,7 +11,7 @@ export function SelfViewModeButton() {
 	return (
 		<GameButton
 			layout="nav"
-			tone="primary"
+			tone="light"
 			className="game-button--reader self-view-mode-button"
 			onClick={toggle}
 			aria-label={labels.selfViewModeDesc}

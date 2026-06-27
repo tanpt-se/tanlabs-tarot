@@ -1,10 +1,14 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { CloseButton } from "../CloseButton";
 import { GameButton } from "../GameButton";
 import { LocaleSwitcher } from "../LocaleSwitcher";
 import { useBackgroundMusic } from "../../hooks/use-background-music";
 import { useLocale } from "../../hooks/use-locale";
+import { useSfx } from "../../hooks/use-sfx";
+import { useTheme } from "../../hooks/use-theme";
 import { BrandLogo } from "../brand/BrandLogo";
+import { GamePanel } from "../GamePanel";
 
 type SettingsTab = "language" | "sound" | "about";
 
@@ -25,6 +29,8 @@ const tabs: { id: SettingsTab; labelKey: keyof Pick<
 export function SettingsModal({ onClose, onClearHistory }: SettingsModalProps) {
 	const { labels } = useLocale();
 	const { enabled, volume, toggle, setVolume } = useBackgroundMusic();
+	const { enabled: sfxEnabled, toggle: toggleSfx, vfxEnabled, toggleVfx } = useSfx();
+	const { theme, setTheme } = useTheme();
 	const [activeTab, setActiveTab] = useState<SettingsTab>("language");
 	const dialogRef = useRef<HTMLDivElement>(null);
 
@@ -40,11 +46,11 @@ export function SettingsModal({ onClose, onClearHistory }: SettingsModalProps) {
 		dialogRef.current?.focus();
 	}, []);
 
-	return (
-		<div className="settings-modal" role="presentation" onClick={onClose}>
-			<div
+	return createPortal(
+		<div className="game-modal-overlay" role="presentation" onClick={onClose}>
+			<GamePanel
 				ref={dialogRef}
-				className="settings-modal__panel"
+				className="game-modal settings-modal"
 				role="dialog"
 				aria-modal="true"
 				aria-label={labels.settingsTitle}
@@ -53,10 +59,7 @@ export function SettingsModal({ onClose, onClearHistory }: SettingsModalProps) {
 			>
 				<header className="settings-modal__header">
 					<h2 className="settings-modal__title">{labels.settingsTitle}</h2>
-					<CloseButton
-						onClick={onClose}
-						aria-label={labels.closeSettings}
-					/>
+					<CloseButton onClick={onClose} aria-label={labels.closeSettings} />
 				</header>
 
 				<div className="settings-modal__body">
@@ -95,7 +98,7 @@ export function SettingsModal({ onClose, onClearHistory }: SettingsModalProps) {
 										{labels.musicLabel}
 									</span>
 									<GameButton
-										tone={enabled ? "primary" : "secondary"}
+										tone={enabled ? "light" : "wood"}
 										layout="text"
 										onClick={toggle}
 										aria-pressed={enabled}
@@ -120,6 +123,49 @@ export function SettingsModal({ onClose, onClearHistory }: SettingsModalProps) {
 										}
 									/>
 								</div>
+								<div className="settings-panel__row">
+									<span className="settings-panel__label">{labels.vfxLabel}</span>
+									<GameButton
+										tone={vfxEnabled ? "light" : "wood"}
+										layout="text"
+										onClick={toggleVfx}
+										aria-pressed={vfxEnabled}
+									>
+										{vfxEnabled ? labels.vfxOn : labels.vfxOff}
+									</GameButton>
+								</div>
+								<div className="settings-panel__row">
+									<span className="settings-panel__label">{labels.sfxLabel}</span>
+									<GameButton
+										tone={sfxEnabled ? "light" : "wood"}
+										layout="text"
+										onClick={toggleSfx}
+										aria-pressed={sfxEnabled}
+									>
+										{sfxEnabled ? labels.sfxOn : labels.sfxOff}
+									</GameButton>
+								</div>
+								<div className="settings-panel__row">
+									<span className="settings-panel__label">{labels.settingsTheme}</span>
+									<div className="settings-panel__theme-group">
+										<GameButton
+											tone={theme === "classic" ? "light" : "wood"}
+											layout="text"
+											onClick={() => setTheme("classic")}
+											aria-pressed={theme === "classic"}
+										>
+											{labels.settingsThemeClassic}
+										</GameButton>
+										<GameButton
+											tone={theme === "mystic" ? "light" : "wood"}
+											layout="text"
+											onClick={() => setTheme("mystic")}
+											aria-pressed={theme === "mystic"}
+										>
+											{labels.settingsThemeMystic}
+										</GameButton>
+									</div>
+								</div>
 							</div>
 						)}
 
@@ -138,7 +184,7 @@ export function SettingsModal({ onClose, onClearHistory }: SettingsModalProps) {
 								</p>
 								{onClearHistory && (
 									<GameButton
-										tone="secondary"
+										tone="wood"
 										layout="text"
 										className="game-button--danger"
 										onClick={onClearHistory}
@@ -150,7 +196,8 @@ export function SettingsModal({ onClose, onClearHistory }: SettingsModalProps) {
 						)}
 					</div>
 				</div>
-			</div>
-		</div>
+			</GamePanel>
+		</div>,
+		document.body,
 	);
 }

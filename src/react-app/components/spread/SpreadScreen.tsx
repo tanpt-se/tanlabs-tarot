@@ -16,12 +16,17 @@ import type { NarratorAdvanceConfig } from "../../lib/types/narrator-advance";
 import type { NarratorChoicesConfig } from "../../lib/types/narrator-choice";
 import type { Reading, SpreadType } from "../../lib/types/reading";
 import { useLocale } from "../../hooks/use-locale";
-import { CardBack } from "../brand/CardBack";
+import { useReversedUprightHold } from "../../hooks/use-reversed-upright-hold";
+import { useSfx } from "../../hooks/use-sfx";
+import { SPREAD_SHUFFLE_DURATION_MS } from "../../lib/animation/constants";
+import { SpreadShuffle } from "./SpreadShuffle";
 import { NarratorShell } from "../character/NarratorShell";
 import { GameStage } from "../character/GameStage";
 import { ChatInput } from "../chat/ChatInput";
 import { JourneyWheel } from "../home/JourneyWheel";
 import { TarotCard } from "./TarotCard";
+import { ReadingPanel } from "./ReadingPanel";
+import { GameButton } from "../GameButton";
 
 type SpreadPhase =
 	| "question"
@@ -37,6 +42,7 @@ interface SpreadScreenProps {
 	completedReadings: Reading[];
 	onUpdate: (id: string, patch: Partial<Reading>) => void;
 	onBack: () => void;
+	onGoHome: () => void;
 	onViewReading: (readingId: string) => void;
 	onSettings: () => void;
 	isNavigating?: boolean;
@@ -55,11 +61,14 @@ export function SpreadScreen({
 	completedReadings,
 	onUpdate,
 	onBack,
+	onGoHome,
 	onViewReading,
 	onSettings,
 	isNavigating = false,
 }: SpreadScreenProps) {
 	const { labels, locale } = useLocale();
+	const { held: reversedUprightHeld } = useReversedUprightHold();
+	const { playFlip, playShuffle, playReveal } = useSfx();
 	const [phase, setPhase] = useState<SpreadPhase>(() => inferPhase(reading));
 	const activePhase: SpreadPhase =
 		reading.status === "complete" ? "complete" : phase;
@@ -117,12 +126,13 @@ export function SpreadScreen({
 	}, [reading.cards.length]);
 
 	const completeCardReveal = useCallback((index: number) => {
+		playFlip();
 		setFlippedIndices((current) => {
 			const next = new Set(current);
 			next.add(index);
 			return next;
 		});
-	}, []);
+	}, [playFlip]);
 
 	const completeRevealFlip = useCallback(
 		(index: number) => {
@@ -136,8 +146,9 @@ export function SpreadScreen({
 
 			setRevealingIndex(null);
 			setPhase("interpret-choice");
+			playReveal();
 		},
-		[reading.cards.length],
+		[playReveal, reading.cards.length],
 	);
 
 	const startDrawingRef = useRef<() => void>(() => {});
@@ -151,6 +162,7 @@ export function SpreadScreen({
 
 		const count = cardCountForSpread(type);
 		setShuffling(true);
+		playShuffle();
 		autoRevealStartedRef.current = false;
 		clearTimeout(shufflingTimerRef.current);
 
@@ -173,8 +185,8 @@ export function SpreadScreen({
 					setShuffling(false);
 				}
 			})();
-		}, 900);
-	}, [onUpdate, reading.cards.length, reading.id, reading.spreadType, selectedSpreadType, shufflingTimerRef]);
+		}, SPREAD_SHUFFLE_DURATION_MS);
+	}, [onUpdate, playShuffle, reading.cards.length, reading.id, reading.spreadType, selectedSpreadType, shufflingTimerRef]);
 
 	startDrawingRef.current = startDrawing;
 
@@ -312,10 +324,9 @@ export function SpreadScreen({
 	}, [activePhase, labels, revealingIndex]);
 
 	const narratorMessage =
-		summaryMessage ?? sequentialCardMessage ?? phaseNarratorMessage;
-
-	const advanceSequentialRef = useRef(advanceSequentialInterpret);
-	advanceSequentialRef.current = advanceSequentialInterpret;
+		activePhase === "interpret-sequential"
+			? undefined
+			: (summaryMessage ?? sequentialCardMessage ?? phaseNarratorMessage);
 
 	const narratorAdvance = useMemo((): NarratorAdvanceConfig | undefined => {
 		switch (activePhase) {
@@ -329,24 +340,23 @@ export function SpreadScreen({
 					blockWhileTyping: false,
 				};
 			case "interpret-sequential":
+				return undefined;
+			case "complete":
 				return {
-					onAdvance: () => advanceSequentialRef.current(),
-					label:
-						interpretCardIndex >= reading.cards.length - 1
-							? labels.spreadInterpretSeeSummary
-							: labels.spreadInterpretNext,
+					onAdvance: onGoHome,
+					label: labels.spreadGoHome,
 					layout: "nav",
+					showIcon: true,
+					blockWhileTyping: false,
 				};
 			default:
 				return undefined;
 		}
 	}, [
 		activePhase,
-		interpretCardIndex,
-		labels.spreadInterpretNext,
-		labels.spreadInterpretSeeSummary,
+		labels.spreadGoHome,
 		labels.spreadReady,
-		reading.cards.length,
+		onGoHome,
 		shuffling,
 	]);
 
@@ -376,8 +386,6 @@ export function SpreadScreen({
 		labels.spreadInterpretSummary,
 		labels.spreadInterpretSummaryDesc,
 	]);
-
-	const isEntryPhase = activePhase === "question";
 
 	const spreadChoices = (
 		<div className="spread-choices">
@@ -414,11 +422,19 @@ export function SpreadScreen({
 		activePhase === "interpret-sequential" ||
 		activePhase === "complete";
 
+	const currentInterpretCard =
+		activePhase === "interpret-sequential"
+			? reading.cards[interpretCardIndex]
+			: undefined;
+
 	return (
-		<div className="spread-layout">
+		<div
+			className="spread-layout"
+			data-phase={activePhase === "interpret-sequential" ? "interpret" : undefined}
+		>
 			<AppChrome
 				onSettings={onSettings}
-				onBack={!isEntryPhase ? onBack : undefined}
+				onBack={onBack}
 				question={
 					activePhase !== "question" && reading.question.trim()
 						? reading.question
@@ -458,14 +474,10 @@ export function SpreadScreen({
 
 						{activePhase === "shuffle" && (
 							<div className="spread-phase spread-phase--center">
-								<div
-									className="spread-shuffle"
-									data-shuffling={shuffling ? "true" : undefined}
-								>
-									<CardBack size="spread" alt={labels.cardBackAlt} />
-									<CardBack size="spread" alt={labels.cardBackAlt} />
-									<CardBack size="spread" alt={labels.cardBackAlt} />
-								</div>
+								<SpreadShuffle
+									shuffling={shuffling}
+									alt={labels.cardBackAlt}
+								/>
 								{shuffling ? (
 									<p className="spread-phase__narration">
 										{labels.spreadShuffleNarration}
@@ -482,12 +494,21 @@ export function SpreadScreen({
 										? interpretCardIndex
 										: undefined
 								}
+								data-compact={
+									activePhase === "interpret-sequential" ? "true" : undefined
+								}
 							>
 								<div
 									className="spread-board"
 									data-count={reading.cards.length}
 								>
-									{reading.cards.map((card, index) => (
+									{reading.cards.map((card, index) => {
+										const isFlipped =
+											flippedIndices.has(index) ||
+											activePhase === "complete" ||
+											activePhase === "interpret-sequential";
+
+										return (
 										<TarotCard
 											key={`${card.id}-${index}`}
 											card={card}
@@ -495,21 +516,52 @@ export function SpreadScreen({
 											dealIndex={
 												activePhase === "reveal" ? index : undefined
 											}
-											flipped={
-												flippedIndices.has(index) ||
-												activePhase === "complete"
-											}
+											flipped={isFlipped}
 											revealLoading={
 												activePhase === "reveal" &&
 												revealingIndex === index
 											}
+											sparkleOnReveal={
+												activePhase === "reveal" &&
+												revealingIndex === index
+											}
+											uprightPreview={
+												reversedUprightHeld &&
+												isFlipped &&
+												card.reversed
+											}
 											onRevealReady={completeCardReveal}
 											onRevealFlipComplete={completeRevealFlip}
 										/>
-									))}
+										);
+									})}
 								</div>
 							</div>
 						)}
+
+						{currentInterpretCard ? (
+							<ReadingPanel
+								card={currentInterpretCard}
+								positionLabel={
+									positionLabels[interpretCardIndex] ?? labels.spreadReading
+								}
+								question={reading.question}
+								onNext={advanceSequentialInterpret}
+								nextLabel={
+									interpretCardIndex >= reading.cards.length - 1
+										? labels.spreadInterpretSeeSummary
+										: labels.spreadInterpretNext
+								}
+							/>
+						) : null}
+
+						{activePhase === "complete" ? (
+							<div className="spread-phase spread-phase--center">
+								<GameButton tone="wood" onClick={onGoHome}>
+									{labels.spreadGoHome}
+								</GameButton>
+							</div>
+						) : null}
 					</div>
 				</div>
 			</GameStage>

@@ -12,16 +12,19 @@ export function SettingsButton({ onClick, fullWidth = false }: SettingsButtonPro
 
 	return (
 		<GameButton
-			layout="nav"
-			tone="secondary"
+			layout={fullWidth ? "text" : "icon"}
+			tone="wood"
 			fullWidth={fullWidth}
 			className={fullWidth ? "" : "game-button--settings"}
 			onClick={onClick}
 			aria-label={labels.openSettings}
 			aria-haspopup="dialog"
 		>
-			<SettingsIcon />
-			<span className="game-button__label">{labels.openSettings}</span>
+			{fullWidth ? (
+				labels.openSettings
+			) : (
+				<SettingsIcon />
+			)}
 		</GameButton>
 	);
 }

@@ -1,12 +1,14 @@
 import { useLocale } from "../hooks/use-locale";
 import { BackButton } from "./BackButton";
 import { QuestionBar } from "./QuestionBar";
-import { SelfViewHistoryButton } from "./SelfViewHistoryButton";
 import { SelfViewModeButton } from "./SelfViewModeButton";
+import { SelfViewTopActions } from "./SelfViewTopActions";
+import { HelpButton } from "./HelpButton";
 import { SettingsButton } from "./SettingsButton";
 
 interface AppChromeProps {
 	onSettings: () => void;
+	onHelp?: () => void;
 	onBack?: () => void;
 	question?: string;
 	variant?: "default" | "minimal";
@@ -14,6 +16,7 @@ interface AppChromeProps {
 
 export function AppChrome({
 	onSettings,
+	onHelp,
 	onBack,
 	question,
 	variant = "default",
@@ -25,9 +28,10 @@ export function AppChrome({
 		<header className="app-chrome" data-variant={variant}>
 			<div className="app-chrome__start">
 				{onBack ? <BackButton onClick={onBack} /> : null}
-				{variant === "minimal" ? <SelfViewHistoryButton /> : null}
 			</div>
-			{showQuestion ? (
+			{variant === "minimal" ? (
+				<SelfViewTopActions />
+			) : showQuestion ? (
 				<QuestionBar
 					label={labels.spreadYourQuestion}
 					question={question!}
@@ -37,6 +41,7 @@ export function AppChrome({
 			)}
 			<div className="app-chrome__actions">
 				<SelfViewModeButton />
+				{onHelp ? <HelpButton onClick={onHelp} /> : null}
 				<SettingsButton onClick={onSettings} />
 			</div>
 		</header>

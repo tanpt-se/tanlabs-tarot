@@ -1,4 +1,5 @@
 import type { NarratorChoiceOption } from "../../lib/types/narrator-choice";
+import { GameButton } from "../GameButton";
 
 interface NarratorChoiceListProps {
 	options: NarratorChoiceOption[];
@@ -12,18 +13,19 @@ export function NarratorChoiceList({
 	return (
 		<div className="narrator-choices" role="group">
 			{options.map((option) => (
-				<button
+				<GameButton
 					key={option.title}
 					type="button"
+					tone="light"
+					layout="stack"
+					fullWidth
 					className="narrator-choice"
+					sublabel={option.description}
 					onClick={option.onSelect}
 					disabled={disabled}
 				>
-					<span className="narrator-choice__title">{option.title}</span>
-					{option.description ? (
-						<span className="narrator-choice__desc">{option.description}</span>
-					) : null}
-				</button>
+					{option.title}
+				</GameButton>
 			))}
 		</div>
 	);

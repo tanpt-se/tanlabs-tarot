@@ -12,7 +12,7 @@ export function NarratorSkipButton({ onClick }: NarratorSkipButtonProps) {
 	return (
 		<GameButton
 			layout="nav"
-			tone="secondary"
+			tone="wood"
 			className="game-button--skip narrator-skip"
 			onClick={onClick}
 			aria-label={labels.narratorSkip}

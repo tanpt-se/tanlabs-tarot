@@ -1,20 +1,28 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useEscapeKey } from "../hooks/useEscapeKey";
 import { useLocale } from "../hooks/use-locale";
 import { useSelfViewSession } from "../hooks/useSelfViewSession";
 import { CloseButton } from "./CloseButton";
 import { GameButton } from "./GameButton";
+import { GamePanel } from "./GamePanel";
 
-export function SelfViewHistoryButton() {
+interface SelfViewHistoryButtonProps {
+	open: boolean;
+	onOpenChange: (open: boolean) => void;
+}
+
+export function SelfViewHistoryButton({
+	open,
+	onOpenChange,
+}: SelfViewHistoryButtonProps) {
 	const { labels, dateTimeLocale } = useLocale();
 	const { sessions, viewingSessionId, setViewingSessionId, registerOverlay } =
 		useSelfViewSession();
-	const [open, setOpen] = useState(false);
 	const panelRef = useRef<HTMLElement>(null);
 	const listId = useId();
 
-	useEscapeKey(() => setOpen(false), open);
+	useEscapeKey(() => onOpenChange(false), open);
 	useEffect(() => {
 		if (!open) return;
 		return registerOverlay();
@@ -33,10 +41,11 @@ export function SelfViewHistoryButton() {
 			<div
 				className="self-view-history-drawer"
 				role="presentation"
-				onClick={() => setOpen(false)}
+				onClick={() => onOpenChange(false)}
 			>
-				<aside
+				<GamePanel
 					ref={panelRef}
+					as="aside"
 					className="self-view-history-drawer__panel"
 					role="dialog"
 					aria-modal="true"
@@ -49,7 +58,7 @@ export function SelfViewHistoryButton() {
 							{labels.selfViewHistoryTitle}
 						</h2>
 						<CloseButton
-							onClick={() => setOpen(false)}
+							onClick={() => onOpenChange(false)}
 							aria-label={labels.selfViewHistoryClose}
 						/>
 					</header>
@@ -67,7 +76,7 @@ export function SelfViewHistoryButton() {
 									data-active={viewingSessionId === entry.id}
 									onClick={() => {
 										setViewingSessionId(entry.id);
-										setOpen(false);
+										onOpenChange(false);
 									}}
 								>
 									<span className="self-view-history-drawer__label">
@@ -88,7 +97,7 @@ export function SelfViewHistoryButton() {
 							</li>
 						))}
 					</ul>
-				</aside>
+				</GamePanel>
 			</div>,
 			document.body,
 		);
@@ -97,9 +106,9 @@ export function SelfViewHistoryButton() {
 		<>
 			<GameButton
 				layout="nav"
-				tone="primary"
+				tone="light"
 				className="game-button--reader game-button--history self-view-history-trigger"
-				onClick={() => setOpen(true)}
+				onClick={() => onOpenChange(true)}
 				aria-expanded={open}
 				aria-controls={listId}
 				aria-haspopup="dialog"

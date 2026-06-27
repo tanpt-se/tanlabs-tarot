@@ -1,3 +1,4 @@
+import { useLocale } from "../../hooks/use-locale";
 import { GameButton } from "../GameButton";
 import { AdvanceIcon } from "../icons/AdvanceIcon";
 
@@ -5,8 +6,9 @@ interface NarratorAdvanceButtonProps {
 	onClick: () => void;
 	label: string;
 	disabled?: boolean;
-	layout?: "icon" | "nav";
+	layout?: "icon" | "nav" | "stack";
 	showIcon?: boolean;
+	code?: string;
 }
 
 export function NarratorAdvanceButton({
@@ -15,20 +17,25 @@ export function NarratorAdvanceButton({
 	disabled = false,
 	layout = "icon",
 	showIcon = false,
+	code,
 }: NarratorAdvanceButtonProps) {
+	const { labels } = useLocale();
 	const showAdvanceIcon = layout === "icon" || showIcon;
+	const useStack = layout === "stack";
 
 	return (
 		<GameButton
-			layout={layout === "icon" ? "icon" : "nav"}
-			tone="primary"
+			layout={useStack ? "stack" : layout === "icon" ? "icon" : "nav"}
+			tone="light"
+			code={code}
+			sublabel={useStack ? labels.buttonEnscribe : undefined}
 			className="narrator-bar__advance"
 			onClick={onClick}
 			disabled={disabled}
 			aria-label={label}
 		>
 			{showAdvanceIcon ? <AdvanceIcon /> : null}
-			{layout === "nav" ? (
+			{layout === "nav" || useStack ? (
 				<span className="game-button__label">{label}</span>
 			) : null}
 		</GameButton>

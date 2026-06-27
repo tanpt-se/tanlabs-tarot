@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 import { useLocale } from "../../hooks/use-locale";
 import type { Reading } from "../../lib/types/reading";
+import { GamePanel } from "../GamePanel";
 
 const JOURNEY_VISIBLE_ROWS = 3;
 
@@ -26,7 +27,7 @@ export function JourneyWheel({ readings, onSelect, disabled = false }: JourneyWh
 			}
 		>
 			<h2 className="journey-wheel__title">{labels.homeHistoryTitle}</h2>
-			<div className="journey-wheel__frame">
+			<GamePanel className="journey-wheel__frame" surfaceClassName="journey-wheel__surface">
 				<div className="journey-wheel__fade journey-wheel__fade--top" aria-hidden />
 				<div className="journey-wheel__highlight" aria-hidden />
 				<div className="journey-wheel__viewport">
@@ -63,7 +64,7 @@ export function JourneyWheel({ readings, onSelect, disabled = false }: JourneyWh
 					className="journey-wheel__fade journey-wheel__fade--bottom"
 					aria-hidden
 				/>
-			</div>
+			</GamePanel>
 		</section>
 	);
 }

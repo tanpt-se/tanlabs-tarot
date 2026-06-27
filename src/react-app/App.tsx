@@ -1,11 +1,16 @@
 import { useCallback, useMemo, useState } from "react";
+import { AnimatePresence } from "framer-motion";
 import { AppLoadingOverlay } from "./components/AppLoadingOverlay";
+import { HomeTableBackdrop } from "./components/home/HomeTableBackdrop";
+import { HomeScreen } from "./components/home/HomeScreen";
 import { SettingsModal } from "./components/settings/SettingsModal";
 import { SelfViewShell } from "./components/spread/SelfViewShell";
 import { SpreadScreen } from "./components/spread/SpreadScreen";
 import { useGameScreen } from "./hooks/useGameScreen";
 import { useReadingHistory } from "./hooks/useReadingHistory";
 import { useSelfView } from "./hooks/use-self-view";
+import { GUIDED_READING_ENABLED } from "./lib/features/guided-reading";
+import { ScreenTransition } from "./components/motion/screen-motion";
 import type { Reading } from "./lib/types/reading";
 import "./App.css";
 
@@ -17,7 +22,10 @@ function App() {
 	const [session, setSession] = useState<Reading>(() => beginSession());
 
 	const {
+		screen,
 		readingId,
+		goHome,
+		startReading,
 		goToReading,
 		isSettingsOpen,
 		openSettings,
@@ -32,13 +40,25 @@ function App() {
 	const handleNewSession = useCallback(() => {
 		const reading = beginSession();
 		setSession(reading);
-		goToReading(reading.id);
-	}, [beginSession, goToReading]);
+		return reading;
+	}, [beginSession]);
+
+	const handleStartGuidedReading = useCallback(() => {
+		if (!GUIDED_READING_ENABLED) return;
+
+		const reading = handleNewSession();
+		startReading(reading.id);
+	}, [handleNewSession, startReading]);
+
+	const handleStartSelfView = useCallback(() => {
+		setSelfView(true);
+	}, [setSelfView]);
 
 	const [isNavigating, setIsNavigating] = useState(false);
 
 	const handleViewReading = useCallback(
 		(id: string) => {
+			if (!GUIDED_READING_ENABLED) return;
 			if (isNavigating || id === readingId) return;
 
 			setIsNavigating(true);
@@ -52,7 +72,12 @@ function App() {
 
 	const handleSelfViewBack = useCallback(() => {
 		setSelfView(false);
-	}, [setSelfView]);
+		goHome();
+	}, [goHome, setSelfView]);
+
+	const handleGoHome = useCallback(() => {
+		goHome();
+	}, [goHome]);
 
 	const completedReadings = useMemo(
 		() =>
@@ -63,33 +88,68 @@ function App() {
 	);
 
 	return (
-		<div className="app-shell" data-self-view={selfView ? "true" : undefined}>
+		<div
+			className="app-shell"
+			data-self-view={selfView ? "true" : undefined}
+			data-screen={selfView ? "self-view" : screen}
+		>
+			<HomeTableBackdrop />
+
 			<main className="app">
-				{selfView ? (
-					<SelfViewShell
-						onSettings={openSettings}
-						onExit={handleSelfViewBack}
-					/>
-				) : (
-					<SpreadScreen
-						key={readingId}
-						reading={activeReading}
-						completedReadings={completedReadings}
-						onUpdate={updateReading}
-						onBack={handleNewSession}
-						onViewReading={handleViewReading}
-						onSettings={openSettings}
-						isNavigating={isNavigating}
-					/>
-				)}
+				<AnimatePresence mode="wait">
+					{selfView ? (
+						<ScreenTransition key="self-view" className="app-screen">
+							<SelfViewShell
+								onSettings={openSettings}
+								isSettingsOpen={isSettingsOpen}
+								onCloseSettings={closeSettings}
+								onExit={handleSelfViewBack}
+							/>
+						</ScreenTransition>
+					) : screen === "home" ? (
+						<ScreenTransition key="home" className="app-screen">
+							<HomeScreen
+								onSelfView={handleStartSelfView}
+								onGuidedReading={handleStartGuidedReading}
+								onOpenSettings={openSettings}
+							/>
+						</ScreenTransition>
+					) : GUIDED_READING_ENABLED ? (
+						<ScreenTransition key={`reading-${readingId}`} className="app-screen">
+							<SpreadScreen
+								reading={activeReading}
+								completedReadings={completedReadings}
+								onUpdate={updateReading}
+								onBack={handleGoHome}
+								onGoHome={handleGoHome}
+								onViewReading={handleViewReading}
+								onSettings={openSettings}
+								isNavigating={isNavigating}
+							/>
+						</ScreenTransition>
+					) : (
+						<ScreenTransition key="home" className="app-screen">
+							<HomeScreen
+								onSelfView={handleStartSelfView}
+								onGuidedReading={handleStartGuidedReading}
+								onOpenSettings={openSettings}
+							/>
+						</ScreenTransition>
+					)}
+				</AnimatePresence>
 
 				{isSettingsOpen && (
 					<SettingsModal
 						onClose={closeSettings}
-						onClearHistory={() => {
-							clearHistory();
-							handleNewSession();
-						}}
+						onClearHistory={
+							GUIDED_READING_ENABLED
+								? () => {
+										clearHistory();
+										const reading = handleNewSession();
+										startReading(reading.id);
+									}
+								: undefined
+						}
 					/>
 				)}
 			</main>

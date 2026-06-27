@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { DrawnCard } from "../../lib/types/reading";
 import {
 	getCardImage,
@@ -8,25 +8,32 @@ import {
 } from "../../lib/tarot/card-image";
 import type { CardId } from "../../lib/tarot/deck";
 import { useLocale } from "../../hooks/use-locale";
+import { animateCardDeal } from "../../lib/animation/card-deal";
+import {
+	animateCardFlip2D,
+	setCardFlipInstant,
+} from "../../lib/animation/card-flip";
+import { CARD_FLIP_DURATION_MS } from "../../lib/animation/constants";
 import { CardBack } from "../brand/CardBack";
 import { CardArtMark } from "../brand/CardArtMark";
+import { RevealSparkle } from "../vfx/RevealSparkle";
 
 interface TarotCardProps {
 	card: DrawnCard;
 	flipped: boolean;
 	index?: number;
 	dealIndex?: number;
-	/** Self-view draw: stay on card back until front art is ready, then auto-flip */
 	revealLoading?: boolean;
-	/** Guided spread: preload front while face-down; tap queues flip until art is ready */
 	preloadFront?: boolean;
-	/** Defer front image decode until card is near viewport (history spreads) */
 	loadWhenVisible?: boolean;
-	/** Self-view draw: called when front art is decoded and safe to flip */
+	sparkleOnReveal?: boolean;
 	onRevealReady?: (index: number) => void;
-	/** Self-view draw: called when auto-flip animation finishes */
 	onRevealFlipComplete?: (index: number) => void;
 	onPress?: (index: number) => void;
+	onRootElement?: (element: HTMLDivElement | null) => void;
+	className?: string;
+	disableHoverPreview?: boolean;
+	uprightPreview?: boolean;
 }
 
 function canHoverPreview() {
@@ -44,13 +51,25 @@ export const TarotCard = memo(function TarotCard({
 	onRevealReady,
 	onRevealFlipComplete,
 	onPress,
+	sparkleOnReveal = false,
+	onRootElement,
+	className = "",
+	disableHoverPreview = false,
+	uprightPreview = false,
 }: TarotCardProps) {
 	const { labels } = useLocale();
 	const cardId = card.id as CardId;
 	const rootRef = useRef<HTMLDivElement>(null);
+	const dealRef = useRef<HTMLDivElement>(null);
+	const innerRef = useRef<HTMLDivElement>(null);
+	const backFaceRef = useRef<HTMLDivElement>(null);
+	const frontFaceRef = useRef<HTMLDivElement>(null);
 	const revealReadySentRef = useRef(false);
 	const revealFlipPendingRef = useRef(false);
 	const pendingManualFlipRef = useRef(false);
+	const flipInitializedRef = useRef(false);
+	const prevFlippedRef = useRef(flipped);
+	const dealPlayedRef = useRef(false);
 	const onRevealReadyRef = useRef(onRevealReady);
 	const onRevealFlipCompleteRef = useRef(onRevealFlipComplete);
 	onRevealReadyRef.current = onRevealReady;
@@ -64,7 +83,11 @@ export const TarotCard = memo(function TarotCard({
 		undefined,
 	);
 	const [flipAnimating, setFlipAnimating] = useState(false);
-	const previewUpright = hovering && flipped && card.reversed;
+	const [sparkleActive, setSparkleActive] = useState(false);
+	const sparkleOnRevealRef = useRef(sparkleOnReveal);
+	sparkleOnRevealRef.current = sparkleOnReveal;
+	const previewUpright =
+		uprightPreview || (hovering && flipped && card.reversed && !disableHoverPreview);
 	const interactive = Boolean(onPress) && !revealLoading;
 	const shouldLoadFront =
 		(flipped || revealLoading || preloadFront) &&
@@ -73,13 +96,57 @@ export const TarotCard = memo(function TarotCard({
 	const backLoading =
 		revealLoading || (preloadFront && !flipped && !frontReady);
 
-	const dealStyle = useMemo(
-		() =>
-			dealIndex === undefined
-				? undefined
-				: ({ "--deal-index": dealIndex } as React.CSSProperties),
-		[dealIndex],
-	);
+	useLayoutEffect(() => {
+		const inner = innerRef.current;
+		const back = backFaceRef.current;
+		const front = frontFaceRef.current;
+		if (!inner || !back || !front) return;
+
+		if (!flipInitializedRef.current) {
+			setCardFlipInstant(flipped, inner, back, front);
+			prevFlippedRef.current = flipped;
+			flipInitializedRef.current = true;
+			return;
+		}
+
+		if (!flipAnimating) {
+			setCardFlipInstant(prevFlippedRef.current, inner, back, front);
+		}
+	}, [flipAnimating, flipped, frontReady, imageSrc]);
+
+	useEffect(() => {
+		if (!flipInitializedRef.current) return;
+
+		const inner = innerRef.current;
+		const back = backFaceRef.current;
+		const front = frontFaceRef.current;
+		if (!inner || !back || !front) return;
+		if (prevFlippedRef.current === flipped) return;
+
+		prevFlippedRef.current = flipped;
+		setFlipAnimating(true);
+
+		const timeline = animateCardFlip2D(flipped, inner, back, front);
+		void timeline.then(() => {
+			setFlipAnimating(false);
+			if (flipped && sparkleOnRevealRef.current) {
+				setSparkleActive(true);
+			}
+			if (revealFlipPendingRef.current && flipped) {
+				revealFlipPendingRef.current = false;
+				onRevealFlipCompleteRef.current?.(index);
+			}
+		});
+	}, [flipped, index]);
+
+	useEffect(() => {
+		if (dealIndex === undefined || !dealRef.current || dealPlayedRef.current) {
+			return;
+		}
+
+		dealPlayedRef.current = true;
+		animateCardDeal(dealRef.current, dealIndex);
+	}, [dealIndex]);
 
 	useEffect(() => {
 		if (!loadWhenVisible) {
@@ -165,7 +232,7 @@ export const TarotCard = memo(function TarotCard({
 			if (!revealFlipPendingRef.current) return;
 			revealFlipPendingRef.current = false;
 			onRevealFlipCompleteRef.current?.(index);
-		}, 600);
+		}, CARD_FLIP_DURATION_MS + 80);
 
 		return () => {
 			window.clearTimeout(timeout);
@@ -180,24 +247,6 @@ export const TarotCard = memo(function TarotCard({
 		pendingManualFlipRef.current = false;
 		onPress(index);
 	}, [flipped, frontReady, index, onPress]);
-
-	useEffect(() => {
-		setFlipAnimating(true);
-	}, [flipped]);
-
-	const handleTransitionEnd = useCallback(
-		(event: React.TransitionEvent<HTMLDivElement>) => {
-			if (event.propertyName !== "transform") return;
-
-			setFlipAnimating(false);
-
-			if (revealFlipPendingRef.current && flipped) {
-				revealFlipPendingRef.current = false;
-				onRevealFlipCompleteRef.current?.(index);
-			}
-		},
-		[flipped, index],
-	);
 
 	const handleClick = useCallback(() => {
 		if (!onPress) return;
@@ -220,6 +269,7 @@ export const TarotCard = memo(function TarotCard({
 	}, [flipped, frontReady, index, onPress, preloadFront, revealLoading]);
 
 	const handlePointerEnter = useCallback(() => {
+		if (disableHoverPreview) return;
 		if (!flipped || !card.reversed || !canHoverPreview()) return;
 		if (previewElevateTimeoutRef.current) {
 			clearTimeout(previewElevateTimeoutRef.current);
@@ -228,10 +278,11 @@ export const TarotCard = memo(function TarotCard({
 		setMountUprightPreview(true);
 		setHovering(true);
 		setPreviewElevated(true);
-	}, [card.reversed, flipped]);
+	}, [card.reversed, disableHoverPreview, flipped]);
 
 	const handlePointerLeave = useCallback(() => {
 		setHovering(false);
+		if (disableHoverPreview) return;
 		if (!flipped || !card.reversed || !canHoverPreview()) return;
 
 		if (previewElevateTimeoutRef.current) {
@@ -241,7 +292,13 @@ export const TarotCard = memo(function TarotCard({
 			setPreviewElevated(false);
 			previewElevateTimeoutRef.current = undefined;
 		}, 300);
-	}, [card.reversed, flipped]);
+	}, [card.reversed, disableHoverPreview, flipped]);
+
+	useEffect(() => {
+		if (uprightPreview) {
+			setMountUprightPreview(true);
+		}
+	}, [uprightPreview]);
 
 	useEffect(() => {
 		return () => {
@@ -251,19 +308,36 @@ export const TarotCard = memo(function TarotCard({
 		};
 	}, []);
 
+	const dealStyle = useMemo(
+		() =>
+			dealIndex === undefined
+				? undefined
+				: ({ "--deal-index": dealIndex } as React.CSSProperties),
+		[dealIndex],
+	);
+
 	return (
 		<div
-			ref={rootRef}
-			className="tarot-card"
+			ref={(node) => {
+				rootRef.current = node;
+				onRootElement?.(node);
+			}}
+			className={["tarot-card", className].filter(Boolean).join(" ")}
 			data-reveal-loading={revealLoading ? "true" : undefined}
 			data-preview-elevated={previewElevated ? "true" : undefined}
+			data-gsap-flip="true"
 		>
-			<div className="tarot-card__deal" style={dealStyle}>
+			<div
+				ref={dealRef}
+				className="tarot-card__deal"
+				style={dealStyle}
+				data-deal={dealIndex !== undefined ? "true" : undefined}
+			>
 				<button
 					type="button"
 					className="tarot-card__flip"
-					data-flipped={flipped}
-					data-reversed={card.reversed}
+					data-flipped={flipped ? "true" : undefined}
+					data-reversed={card.reversed ? "true" : undefined}
 					data-preview-upright={previewUpright ? "true" : undefined}
 					data-locked={revealLoading ? "true" : undefined}
 					onClick={interactive ? handleClick : undefined}
@@ -282,14 +356,15 @@ export const TarotCard = memo(function TarotCard({
 					aria-pressed={flipped}
 				>
 					<div
+						ref={innerRef}
 						className={
 							flipAnimating
 								? "tarot-card__inner tarot-card__inner--animating"
 								: "tarot-card__inner"
 						}
-						onTransitionEnd={handleTransitionEnd}
 					>
 						<div
+							ref={backFaceRef}
 							className="tarot-card__face tarot-card__face--back"
 							data-loading={backLoading ? "true" : undefined}
 						>
@@ -301,6 +376,7 @@ export const TarotCard = memo(function TarotCard({
 						</div>
 						{imageSrc ? (
 							<div
+								ref={frontFaceRef}
 								className="tarot-card__face tarot-card__face--front"
 								data-front-ready={frontReady ? "true" : undefined}
 							>
@@ -344,9 +420,19 @@ export const TarotCard = memo(function TarotCard({
 									/>
 								)}
 							</div>
-						) : null}
+						) : (
+							<div
+								ref={frontFaceRef}
+								className="tarot-card__face tarot-card__face--front"
+								aria-hidden
+							/>
+						)}
 					</div>
 				</button>
+				<RevealSparkle
+					active={sparkleActive}
+					onComplete={() => setSparkleActive(false)}
+				/>
 			</div>
 		</div>
 	);

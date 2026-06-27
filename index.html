@@ -4,14 +4,15 @@
 		<meta charset="UTF-8" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<meta name="color-scheme" content="light" />
+		<meta name="color-scheme" content="dark light" />
 		<title>Tanlabs Tarot</title>
 		<link rel="preconnect" href="https://fonts.googleapis.com" />
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 		<link
-			href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,600;0,700;1,400&display=swap"
+			href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap"
 			rel="stylesheet"
 		/>
+		<link rel="preload" href="/backgrounds/tarot-table-backdrop.webp" as="image" type="image/webp" />
 		<link rel="preload" href="/cards/card-back.svg" as="image" type="image/svg+xml" />
 		<link rel="preload" href="/characters/narrator-sprite.webp" as="image" type="image/webp" />
 		<link rel="preload" href="/brand/logo.svg" as="image" type="image/svg+xml" />
@@ -19,6 +20,8 @@
 			(function () {
 				var locale = localStorage.getItem("tarot-locale") || "en";
 				document.documentElement.lang = locale === "vi" ? "vi" : "en";
+				var theme = localStorage.getItem("tarot-quest:theme") || "mystic";
+				document.documentElement.dataset.theme = theme;
 			})();
 		</script>
 	</head>

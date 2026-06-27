@@ -16,6 +16,7 @@ import {
 	SELF_VIEW_SHUFFLE_MS,
 	createFreshDeckState,
 } from "../lib/self-view/deck-state";
+import { SELF_VIEW_MAX_SPREAD_CARDS } from "../lib/self-view/spread-layout";
 import { drawOneCard, reshuffleDeck } from "../lib/tarot/draw";
 import { loadCardImage, preloadTopOfDeck } from "../lib/tarot/card-image";
 import type { CardId } from "../lib/tarot/deck";
@@ -160,6 +161,7 @@ export function SelfViewSessionProvider({ children }: { children: ReactNode }) {
 
 	const drawOne = useCallback(() => {
 		if (isViewingHistory || revealingIndex !== null) return;
+		if (drawnCards.length >= SELF_VIEW_MAX_SPREAD_CARDS) return;
 
 		const result = drawOneCard(deck);
 		if (!result) return;

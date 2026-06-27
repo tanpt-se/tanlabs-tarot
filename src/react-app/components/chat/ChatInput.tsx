@@ -44,7 +44,7 @@ export function ChatInput({
 			<GameButton
 				type="submit"
 				layout="icon"
-				tone="primary"
+				tone="light"
 				disabled={!value.trim()}
 				aria-label={sendLabel}
 			>

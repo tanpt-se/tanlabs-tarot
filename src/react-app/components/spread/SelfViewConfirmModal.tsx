@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { useEscapeKey } from "../../hooks/useEscapeKey";
 import { useSelfViewSession } from "../../hooks/useSelfViewSession";
 import { GameButton } from "../GameButton";
+import { GamePanel } from "../GamePanel";
 
 interface SelfViewConfirmModalProps {
 	title: string;
@@ -34,17 +35,18 @@ export function SelfViewConfirmModal({
 
 	return createPortal(
 		<div
-			className="settings-modal confirm-modal"
+			className="game-modal-overlay confirm-modal"
 			role="presentation"
 			onClick={onCancel}
 		>
-			<div
+			<GamePanel
 				ref={dialogRef}
-				className="confirm-modal__panel"
+				className="game-modal confirm-modal__panel"
 				role="dialog"
 				aria-modal="true"
 				aria-labelledby={titleId}
 				tabIndex={-1}
+				surfaceClassName="confirm-modal__surface"
 				onClick={(event) => event.stopPropagation()}
 			>
 				<h2 id={titleId} className="confirm-modal__title">
@@ -52,14 +54,14 @@ export function SelfViewConfirmModal({
 				</h2>
 				<p className="confirm-modal__text">{message}</p>
 				<div className="confirm-modal__actions">
-					<GameButton tone="primary" layout="text" onClick={onConfirm}>
+					<GameButton tone="light" layout="text" onClick={onConfirm}>
 						{confirmLabel}
 					</GameButton>
-					<GameButton tone="secondary" layout="text" onClick={onCancel}>
+					<GameButton tone="wood" layout="text" onClick={onCancel}>
 						{cancelLabel}
 					</GameButton>
 				</div>
-			</div>
+			</GamePanel>
 		</div>,
 		document.body,
 	);

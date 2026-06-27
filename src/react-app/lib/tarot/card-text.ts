@@ -217,26 +217,6 @@ export function buildCardInterpretation(
 	return getCardMeaning(card.id, card.reversed, locale);
 }
 
-export function buildSpreadSummary(
-	_question: string,
-	cards: { id: string; reversed: boolean }[],
-	locale: Locale,
-): string {
-	if (cards.length === 0) return "";
-
-	const intro =
-		locale === "vi"
-			? `Cho câu hỏi của ngươi, đây là lời giải tổng hợp:\n\n`
-			: `Here is the full reading for your question:\n\n`;
-
-	return (
-		intro +
-		cards
-			.map((card) => getCardMeaning(card.id, card.reversed, locale))
-			.join("\n\n")
-	);
-}
-
 export function buildInterpretation(
 	question: string,
 	cards: { id: string; reversed: boolean }[],

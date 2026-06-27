@@ -11,14 +11,13 @@ export function BackButton({ onClick }: BackButtonProps) {
 
 	return (
 		<GameButton
-			layout="nav"
-			tone="secondary"
+			layout="icon"
+			tone="wood"
 			className="game-button--back"
 			onClick={onClick}
 			aria-label={labels.spreadBack}
 		>
 			<BackIcon />
-			<span className="game-button__label">{labels.spreadBack}</span>
 		</GameButton>
 	);
 }

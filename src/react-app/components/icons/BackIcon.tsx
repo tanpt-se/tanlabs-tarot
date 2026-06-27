@@ -20,10 +20,6 @@ export function BackIcon() {
 				strokeWidth="1.75"
 				strokeLinecap="square"
 			/>
-			<path
-				d="M6.5 10.5l0.45 1.35 1.4 0.45-1.1 0.85 0.45 1.4-1.15-0.8-1.15 0.8 0.45-1.4-1.1-0.85 1.4-0.45z"
-				fill="var(--palette-crimson)"
-			/>
 		</svg>
 	);
 }
