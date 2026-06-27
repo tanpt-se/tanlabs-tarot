@@ -6,8 +6,8 @@ import { HomeScreen } from "./components/home/HomeScreen";
 import { SettingsModal } from "./components/settings/SettingsModal";
 import { SelfViewShell } from "./components/spread/SelfViewShell";
 import { SpreadScreen } from "./components/spread/SpreadScreen";
-import { useGameScreen } from "./hooks/useGameScreen";
-import { useReadingHistory } from "./hooks/useReadingHistory";
+import { useGameScreen } from "./hooks/use-game-screen";
+import { useReadingHistory } from "./hooks/use-reading-history";
 import { useSelfView } from "./hooks/use-self-view";
 import { GUIDED_READING_ENABLED } from "./lib/features/guided-reading";
 import { ScreenTransition } from "./components/motion/screen-motion";
@@ -17,8 +17,7 @@ import "./App.css";
 const NAVIGATION_DELAY_MS = 300;
 
 function App() {
-	const { readings, beginSession, updateReading, clearHistory } =
-		useReadingHistory();
+	const { readings, beginSession, updateReading } = useReadingHistory();
 	const [session, setSession] = useState<Reading>(() => beginSession());
 
 	const {
@@ -112,6 +111,8 @@ function App() {
 								onSelfView={handleStartSelfView}
 								onGuidedReading={handleStartGuidedReading}
 								onOpenSettings={openSettings}
+								onCloseSettings={closeSettings}
+								isSettingsOpen={isSettingsOpen}
 							/>
 						</ScreenTransition>
 					) : GUIDED_READING_ENABLED ? (
@@ -133,25 +134,14 @@ function App() {
 								onSelfView={handleStartSelfView}
 								onGuidedReading={handleStartGuidedReading}
 								onOpenSettings={openSettings}
+								onCloseSettings={closeSettings}
+								isSettingsOpen={isSettingsOpen}
 							/>
 						</ScreenTransition>
 					)}
 				</AnimatePresence>
 
-				{isSettingsOpen && (
-					<SettingsModal
-						onClose={closeSettings}
-						onClearHistory={
-							GUIDED_READING_ENABLED
-								? () => {
-										clearHistory();
-										const reading = handleNewSession();
-										startReading(reading.id);
-									}
-								: undefined
-						}
-					/>
-				)}
+				{isSettingsOpen && <SettingsModal onClose={closeSettings} />}
 			</main>
 
 			{isNavigating ? <AppLoadingOverlay /> : null}

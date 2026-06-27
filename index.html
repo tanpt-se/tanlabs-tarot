@@ -13,15 +13,13 @@
 			rel="stylesheet"
 		/>
 		<link rel="preload" href="/backgrounds/tarot-table-backdrop.webp" as="image" type="image/webp" />
-		<link rel="preload" href="/cards/card-back.svg" as="image" type="image/svg+xml" />
+		<link rel="preload" href="/cards/card-back-classic.svg" as="image" type="image/svg+xml" />
 		<link rel="preload" href="/characters/narrator-sprite.webp" as="image" type="image/webp" />
 		<link rel="preload" href="/brand/logo.svg" as="image" type="image/svg+xml" />
 		<script>
 			(function () {
 				var locale = localStorage.getItem("tarot-locale") || "en";
 				document.documentElement.lang = locale === "vi" ? "vi" : "en";
-				var theme = localStorage.getItem("tarot-quest:theme") || "mystic";
-				document.documentElement.dataset.theme = theme;
 			})();
 		</script>
 	</head>

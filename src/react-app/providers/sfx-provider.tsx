@@ -9,12 +9,15 @@ import {
 	playCardFlipSfx,
 	playRevealSfx,
 	playShuffleSfx,
+	setSfxVolumeMultiplier,
 } from "../lib/audio/sfx";
 import { preloadSparkleAnimation } from "../lib/vfx/sparkle-data";
 import { SfxContext } from "./sfx-context";
 
 const SFX_STORAGE_KEY = "tarot-quest:sfx-enabled";
 const VFX_STORAGE_KEY = "tarot-quest:vfx-enabled";
+const SFX_VOLUME_STORAGE_KEY = "tarot-quest:sfx-volume";
+const DEFAULT_SFX_VOLUME = 0.8;
 
 function readStoredEnabled(key: string, defaultValue = true): boolean {
 	if (typeof localStorage === "undefined") return defaultValue;
@@ -22,9 +25,22 @@ function readStoredEnabled(key: string, defaultValue = true): boolean {
 	return stored !== "false";
 }
 
+function readStoredVolume(): number {
+	if (typeof localStorage === "undefined") return DEFAULT_SFX_VOLUME;
+	const raw = localStorage.getItem(SFX_VOLUME_STORAGE_KEY);
+	if (!raw) return DEFAULT_SFX_VOLUME;
+	const parsed = Number.parseFloat(raw);
+	return Number.isFinite(parsed) ? Math.min(1, Math.max(0, parsed)) : DEFAULT_SFX_VOLUME;
+}
+
 export function SfxProvider({ children }: { children: ReactNode }) {
 	const [enabled, setEnabled] = useState(() => readStoredEnabled(SFX_STORAGE_KEY));
 	const [vfxEnabled, setVfxEnabled] = useState(() => readStoredEnabled(VFX_STORAGE_KEY));
+	const [volume, setVolumeState] = useState(readStoredVolume);
+
+	useEffect(() => {
+		setSfxVolumeMultiplier(volume);
+	}, [volume]);
 
 	useEffect(() => {
 		if (vfxEnabled) preloadSparkleAnimation();
@@ -46,6 +62,21 @@ export function SfxProvider({ children }: { children: ReactNode }) {
 		});
 	}, []);
 
+	const toggleEffects = useCallback(() => {
+		const next = !(enabled && vfxEnabled);
+		setEnabled(next);
+		setVfxEnabled(next);
+		localStorage.setItem(SFX_STORAGE_KEY, String(next));
+		localStorage.setItem(VFX_STORAGE_KEY, String(next));
+	}, [enabled, vfxEnabled]);
+
+	const setVolume = useCallback((next: number) => {
+		const clamped = Math.min(1, Math.max(0, next));
+		setVolumeState(clamped);
+		localStorage.setItem(SFX_VOLUME_STORAGE_KEY, String(clamped));
+		setSfxVolumeMultiplier(clamped);
+	}, []);
+
 	const playFlip = useCallback(() => {
 		if (enabled) playCardFlipSfx();
 	}, [enabled]);
@@ -62,13 +93,27 @@ export function SfxProvider({ children }: { children: ReactNode }) {
 		() => ({
 			enabled,
 			vfxEnabled,
+			volume,
 			toggle,
 			toggleVfx,
+			toggleEffects,
+			setVolume,
 			playFlip,
 			playShuffle,
 			playReveal,
 		}),
-		[enabled, vfxEnabled, toggle, toggleVfx, playFlip, playShuffle, playReveal],
+		[
+			enabled,
+			vfxEnabled,
+			volume,
+			toggle,
+			toggleVfx,
+			toggleEffects,
+			setVolume,
+			playFlip,
+			playShuffle,
+			playReveal,
+		],
 	);
 
 	return <SfxContext.Provider value={value}>{children}</SfxContext.Provider>;

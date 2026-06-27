@@ -1,18 +1,18 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { useBackgroundMusic } from "../../hooks/use-background-music";
+import { useAppChromeShortcuts } from "../../hooks/use-app-chrome-shortcuts";
 import { useLocale } from "../../hooks/use-locale";
-import { SelfViewSessionProvider } from "../../providers/self-view-session-context";
-import { useSelfViewSession } from "../../hooks/useSelfViewSession";
+import { SelfViewSessionProvider } from "../../providers/self-view-session-provider";
+import { useSelfViewSession } from "../../hooks/use-self-view-session";
 import {
-	isSelfViewShortcutBlocked,
-	shouldIgnoreSelfViewShortcut,
-} from "../../lib/keyboard/should-ignore-shortcut";
+	isAppShortcutBlocked,
+} from "../../lib/keyboard/app-shortcut";
 import { AppChrome } from "../AppChrome";
 import { GameToast } from "../GameToast";
 import { GameStage } from "../character/GameStage";
-import { SelfViewConfirmModal } from "./SelfViewConfirmModal";
+import { ConfirmModal } from "../modals/ConfirmModal";
 import { SelfViewDeckScreen } from "./SelfViewDeckScreen";
-import { SelfViewHelpModal } from "./SelfViewHelpModal";
+import { HelpModal } from "../help/HelpModal";
 
 interface SelfViewShellProps {
 	onSettings: () => void;
@@ -51,7 +51,7 @@ function SelfViewShellContent({
 			return;
 		}
 
-		if (isSelfViewShortcutBlocked(hasOverlayOpen)) return;
+		if (isAppShortcutBlocked(hasOverlayOpen)) return;
 
 		setHelpOpen(true);
 	}, [hasOverlayOpen, helpOpen]);
@@ -62,38 +62,16 @@ function SelfViewShellContent({
 			return;
 		}
 
-		if (isSelfViewShortcutBlocked(hasOverlayOpen)) return;
+		if (isAppShortcutBlocked(hasOverlayOpen)) return;
 
 		onSettings();
 	}, [hasOverlayOpen, isSettingsOpen, onCloseSettings, onSettings]);
 
-	useEffect(() => {
-		const onKeyDown = (event: KeyboardEvent) => {
-			if (shouldIgnoreSelfViewShortcut(event)) return;
-
-			const key = event.key.toLowerCase();
-
-			if (key === "i") {
-				event.preventDefault();
-				handleHelpHotkey();
-				return;
-			}
-
-			if (key === "o") {
-				event.preventDefault();
-				handleSettingsHotkey();
-				return;
-			}
-
-			if (key === "m") {
-				event.preventDefault();
-				handleMuteHotkey();
-			}
-		};
-
-		document.addEventListener("keydown", onKeyDown);
-		return () => document.removeEventListener("keydown", onKeyDown);
-	}, [handleHelpHotkey, handleMuteHotkey, handleSettingsHotkey]);
+	useAppChromeShortcuts({
+		onHelp: handleHelpHotkey,
+		onSettings: handleSettingsHotkey,
+		onMute: handleMuteHotkey,
+	});
 
 	const handleBackRequest = useCallback(() => {
 		if (drawnCards.length > 0) {
@@ -127,11 +105,11 @@ function SelfViewShellContent({
 			</GameStage>
 
 			{helpOpen ? (
-				<SelfViewHelpModal onClose={() => setHelpOpen(false)} />
+				<HelpModal onClose={() => setHelpOpen(false)} />
 			) : null}
 
 			{exitModalOpen ? (
-				<SelfViewConfirmModal
+				<ConfirmModal
 					title={labels.selfViewExitTitle}
 					message={labels.selfViewExitMessage}
 					confirmLabel={labels.selfViewExitConfirm}

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { CardBack } from "../brand/CardBack";
-import { useDeckShuffleAnimation } from "../../hooks/use-deck-shuffle";
+import { useDeckShuffleAnimation } from "../../hooks/use-deck-shuffle-animation";
 import { RevealSparkle } from "../vfx/RevealSparkle";
 
 interface SpreadShuffleProps {

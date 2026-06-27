@@ -1,4 +1,4 @@
-export function shouldIgnoreSelfViewShortcut(event: KeyboardEvent): boolean {
+export function shouldIgnoreAppShortcut(event: KeyboardEvent): boolean {
 	if (event.repeat || event.ctrlKey || event.metaKey || event.altKey) {
 		return true;
 	}
@@ -17,12 +17,12 @@ export function shouldIgnoreSelfViewShortcut(event: KeyboardEvent): boolean {
 	);
 }
 
-export function isSelfViewModalOpen(): boolean {
+export function isGameModalOpen(): boolean {
 	return Boolean(document.querySelector(".game-modal-overlay"));
 }
 
-export function isSelfViewShortcutBlocked(
+export function isAppShortcutBlocked(
 	hasOverlayOpen: () => boolean,
 ): boolean {
-	return isSelfViewModalOpen() || hasOverlayOpen();
+	return isGameModalOpen() || hasOverlayOpen();
 }

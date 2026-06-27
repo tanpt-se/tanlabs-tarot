@@ -1,5 +1,4 @@
-import { CARD_BACK, CARD_BACK_CLASSIC } from "../../assets";
-import { useTheme } from "../../hooks/use-theme";
+import { CARD_BACK_CLASSIC } from "../../assets";
 
 interface CardBackProps {
 	alt?: string;
@@ -12,17 +11,13 @@ export function CardBack({
 	size = "hero",
 	reversed = false,
 }: CardBackProps) {
-	const { theme } = useTheme();
-	const src = theme === "mystic" ? CARD_BACK : CARD_BACK_CLASSIC;
-
 	return (
 		<div
 			className={`card-back card-back--${size}`}
 			data-reversed={reversed}
-			data-theme={theme}
 		>
 			<div className="card-frame">
-				<img className="card-frame__image" src={src} alt={alt} />
+				<img className="card-frame__image" src={CARD_BACK_CLASSIC} alt={alt} />
 			</div>
 		</div>
 	);

@@ -1,8 +1,8 @@
 import { useLocale } from "../hooks/use-locale";
 import { BackButton } from "./BackButton";
 import { QuestionBar } from "./QuestionBar";
-import { SelfViewModeButton } from "./SelfViewModeButton";
-import { SelfViewTopActions } from "./SelfViewTopActions";
+import { SelfViewModeButton } from "./self-view/SelfViewModeButton";
+import { SelfViewTopActions } from "./self-view/SelfViewTopActions";
 import { HelpButton } from "./HelpButton";
 import { SettingsButton } from "./SettingsButton";
 

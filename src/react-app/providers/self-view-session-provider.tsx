@@ -1,5 +1,4 @@
 import {
-	createContext,
 	useCallback,
 	useEffect,
 	useMemo,
@@ -23,33 +22,7 @@ import type { CardId } from "../lib/tarot/deck";
 import type { DrawnCard } from "../lib/types/reading";
 import type { SelfViewSession } from "../lib/types/self-view-session";
 import { toggleSetIndex } from "../lib/utils/toggle-set-index";
-
-type SelfViewSessionContextValue = {
-	sessions: SelfViewSession[];
-	viewingSessionId: string | null;
-	isViewingHistory: boolean;
-	displayedCards: DrawnCard[];
-	deck: CardId[];
-	drawnCards: DrawnCard[];
-	flippedIndices: Set<number>;
-	shuffling: boolean;
-	revealingIndex: number | null;
-	setViewingSessionId: (id: string | null) => void;
-	shuffleDeck: () => void;
-	drawOne: () => void;
-	completeCardReveal: (index: number) => void;
-	completeRevealFlip: (index: number) => void;
-	toggleCardFlip: (index: number) => void;
-	backToCurrent: () => void;
-	resetLiveSpread: () => void;
-	archiveCurrentSpread: () => void;
-	registerOverlay: () => () => void;
-	hasOverlayOpen: () => boolean;
-};
-
-const SelfViewSessionContext = createContext<SelfViewSessionContextValue | null>(
-	null,
-);
+import { SelfViewSessionContext } from "./self-view-session-context";
 
 const SELF_VIEW_REVEAL_FLIP_MS = 560;
 
@@ -286,5 +259,3 @@ export function SelfViewSessionProvider({ children }: { children: ReactNode }) {
 		</SelfViewSessionContext.Provider>
 	);
 }
-
-export { SelfViewSessionContext };

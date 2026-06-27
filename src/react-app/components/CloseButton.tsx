@@ -11,6 +11,7 @@ export function CloseButton({ onClick, "aria-label": ariaLabel }: CloseButtonPro
 		<GameButton
 			layout="icon"
 			tone="wood"
+			className="close-button"
 			onClick={onClick}
 			aria-label={ariaLabel}
 		>

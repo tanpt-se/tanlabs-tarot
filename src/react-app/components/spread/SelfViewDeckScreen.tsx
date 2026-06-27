@@ -1,17 +1,17 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { useLocale } from "../../hooks/use-locale";
-import { useEscapeKey } from "../../hooks/useEscapeKey";
+import { useEscapeKey } from "../../hooks/use-escape-key";
 import { useReversedUprightHold } from "../../hooks/use-reversed-upright-hold";
 import {
-	isSelfViewShortcutBlocked,
-	shouldIgnoreSelfViewShortcut,
-} from "../../lib/keyboard/should-ignore-shortcut";
+	isAppShortcutBlocked,
+	shouldIgnoreAppShortcut,
+} from "../../lib/keyboard/app-shortcut";
 import { parseSelfViewCardSlotKey } from "../../lib/keyboard/self-view-card-slot";
 import {
 	getSelfViewDrawOrigin,
 	runSelfViewAddCardAnimation,
-} from "../../lib/animation/self-view-spread-layout";
+} from "../../lib/animation/self-view-card-entrance";
 import { preloadTopOfDeck } from "../../lib/tarot/card-image";
 import {
 	canSelfViewZoom,
@@ -19,7 +19,7 @@ import {
 	getSelfViewSpreadStyle,
 	SELF_VIEW_MAX_SPREAD_CARDS,
 } from "../../lib/self-view/spread-layout";
-import { useSelfViewSession } from "../../hooks/useSelfViewSession";
+import { useSelfViewSession } from "../../hooks/use-self-view-session";
 import { GameButton } from "../GameButton";
 import { CloseButton } from "../CloseButton";
 import {
@@ -226,7 +226,7 @@ export function SelfViewDeckScreen() {
 
 	const handleCardZoomHotkey = useCallback(
 		(slotIndex: number) => {
-		if (isSelfViewShortcutBlocked(hasOverlayOpen)) return;
+		if (isAppShortcutBlocked(hasOverlayOpen)) return;
 		if (slotIndex < 0 || slotIndex >= displayedCards.length) return;
 
 			openCardFocus(slotIndex);
@@ -235,7 +235,7 @@ export function SelfViewDeckScreen() {
 	);
 
 	const handleDrawHotkey = useCallback(() => {
-		if (isSelfViewShortcutBlocked(hasOverlayOpen)) return;
+		if (isAppShortcutBlocked(hasOverlayOpen)) return;
 		if (isViewingHistory || focusState || actionsDisabled) return;
 
 		warmNextDraw();
@@ -251,7 +251,7 @@ export function SelfViewDeckScreen() {
 
 	useEffect(() => {
 		const onKeyDown = (event: KeyboardEvent) => {
-			if (shouldIgnoreSelfViewShortcut(event)) return;
+			if (shouldIgnoreAppShortcut(event)) return;
 
 			if (event.key === " ") {
 				event.preventDefault();

@@ -1,11 +1,11 @@
 import { useEffect, useId, useRef } from "react";
 import { createPortal } from "react-dom";
-import { useEscapeKey } from "../hooks/useEscapeKey";
-import { useLocale } from "../hooks/use-locale";
-import { useSelfViewSession } from "../hooks/useSelfViewSession";
-import { CloseButton } from "./CloseButton";
-import { GameButton } from "./GameButton";
-import { GamePanel } from "./GamePanel";
+import { useEscapeKey } from "../../hooks/use-escape-key";
+import { useLocale } from "../../hooks/use-locale";
+import { useSelfViewSession } from "../../hooks/use-self-view-session";
+import { CloseButton } from "../CloseButton";
+import { GameButton } from "../GameButton";
+import { GamePanel } from "../GamePanel";
 
 interface SelfViewHistoryButtonProps {
 	open: boolean;

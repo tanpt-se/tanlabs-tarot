@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
-import { useLocale } from "../hooks/use-locale";
-import { useSelfViewSession } from "../hooks/useSelfViewSession";
+import { useLocale } from "../../hooks/use-locale";
+import { useSelfViewSession } from "../../hooks/use-self-view-session";
 import {
-	isSelfViewShortcutBlocked,
-	shouldIgnoreSelfViewShortcut,
-} from "../lib/keyboard/should-ignore-shortcut";
-import { GameButton } from "./GameButton";
-import { SelfViewConfirmModal } from "./spread/SelfViewConfirmModal";
+	isAppShortcutBlocked,
+	shouldIgnoreAppShortcut,
+} from "../../lib/keyboard/app-shortcut";
+import { GameButton } from "../GameButton";
+import { ConfirmModal } from "../modals/ConfirmModal";
 import { SelfViewHistoryButton } from "./SelfViewHistoryButton";
 
 export function SelfViewTopActions() {
@@ -36,13 +36,13 @@ export function SelfViewTopActions() {
 			return;
 		}
 
-		if (isSelfViewShortcutBlocked(hasOverlayOpen)) return;
+		if (isAppShortcutBlocked(hasOverlayOpen)) return;
 
 		setHistoryOpen(true);
 	}, [hasOverlayOpen, historyOpen, sessions.length]);
 
 	const handleClearHotkey = useCallback(() => {
-		if (isSelfViewShortcutBlocked(hasOverlayOpen)) return;
+		if (isAppShortcutBlocked(hasOverlayOpen)) return;
 		if (isViewingHistory || drawnCards.length === 0) return;
 
 		setResetModalOpen(true);
@@ -50,7 +50,7 @@ export function SelfViewTopActions() {
 
 	useEffect(() => {
 		const onKeyDown = (event: KeyboardEvent) => {
-			if (shouldIgnoreSelfViewShortcut(event)) return;
+			if (shouldIgnoreAppShortcut(event)) return;
 
 			const key = event.key.toLowerCase();
 
@@ -92,7 +92,7 @@ export function SelfViewTopActions() {
 			</div>
 
 			{resetModalOpen ? (
-				<SelfViewConfirmModal
+				<ConfirmModal
 					title={labels.selfViewResetTitle}
 					message={labels.selfViewResetMessage}
 					confirmLabel={labels.selfViewResetConfirm}

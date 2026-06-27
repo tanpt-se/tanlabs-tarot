@@ -1,4 +1,4 @@
-export function SettingsIcon() {
+export function HelpIcon() {
 	return (
 		<svg
 			className="game-button__icon"
@@ -8,18 +8,19 @@ export function SettingsIcon() {
 			<circle
 				cx="12"
 				cy="12"
-				r="3.35"
+				r="8.25"
 				fill="none"
 				stroke="currentColor"
 				strokeWidth="1.75"
 			/>
 			<path
-				d="M12 4.25v2.35 M12 17.4v2.35 M4.25 12h2.35 M17.4 12h2.35 M6.05 6.05l1.66 1.66 M16.29 16.29l1.66 1.66 M6.05 17.95l1.66-1.66 M16.29 7.71l1.66-1.66"
+				d="M12 16.25v-3.75"
 				fill="none"
 				stroke="currentColor"
 				strokeWidth="1.75"
 				strokeLinecap="square"
 			/>
+			<circle cx="12" cy="8.35" r="1.15" fill="var(--palette-crimson)" />
 		</svg>
 	);
 }

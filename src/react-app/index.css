@@ -114,6 +114,8 @@
 
 	--frame-corner: 1rem;
 	--button-height: 3.85rem;
+	--close-button-size: calc(var(--button-height) * 0.5);
+	--close-button-icon-size: 0.8rem;
 	--game-btn-label-size: 1.3rem;
 	--game-btn-label-size-stack: 1.3rem;
 	--game-btn-sublabel-size: 0.78rem;
@@ -126,6 +128,9 @@
 
 	--home-menu-width: min(26rem, 92vw);
 	--home-menu-panel-padding: 2rem;
+	--home-menu-item-label-size: 1.15rem;
+	--home-menu-item-gap: 0.65rem;
+	--home-menu-item-min-height: 3.6rem;
 	--home-playfield-inset-x: clamp(1rem, 4vw, 1.5rem);
 	--frame-side: 1rem;
 	--frame-top: var(--frame-side);
@@ -133,8 +138,15 @@
 
 	--game-modal-width: 28rem;
 	--game-modal-height: 32rem;
+	--game-modal-title-size: 1.3rem;
+	--game-modal-heading-size: 1.2rem;
+	--game-modal-body-size: 1.1rem;
+	--game-modal-muted-size: 1rem;
+	--game-modal-tab-size: 1.05rem;
+	--game-modal-kbd-size: 1rem;
 
 	--chrome-nav-button-width: var(--button-height);
+	--chrome-nav-icon-size: 1.75rem;
 	--chrome-nav-label-size: 0.8rem;
 	--chrome-nav-gap: 0.5rem;
 	--chrome-nav-inset: calc(
@@ -149,48 +161,6 @@
 	--z-history-drawer: 48;
 	--z-modal: 55;
 	--z-loading: 70;
-}
-
-/* Tarot Quest — Mystic theme */
-[data-theme="mystic"] {
-	color-scheme: dark;
-
-	--palette-forest: #0b1026;
-	--palette-crimson: #ff5acd;
-	--palette-gold: #d9b96e;
-	--palette-gold-dark: #8f7340;
-	--palette-gold-light: #e8d4a8;
-	--palette-gold-pale: #f0e6c8;
-	--palette-ink: #ffffff;
-	--palette-paper: #0b1026;
-	--palette-paper-muted: #141b3d;
-
-	--palette-sun: #65e6ff;
-	--palette-sun-soft: #6f5bff;
-	--palette-sky: #1a2248;
-
-	--background: #0b1026;
-	--foreground: #ffffff;
-	--card: #141b3d;
-	--card-foreground: #ffffff;
-	--primary: #6f5bff;
-	--primary-foreground: #ffffff;
-	--secondary: #1a2248;
-	--secondary-foreground: #ffffff;
-	--muted: #1a2248;
-	--muted-foreground: #a8b0d4;
-	--accent: #65e6ff;
-	--accent-foreground: #0b1026;
-	--highlight: #d9b96e;
-	--destructive: #ff5acd;
-	--border: color-mix(in srgb, #6f5bff 55%, transparent);
-	--border-soft: color-mix(in srgb, #65e6ff 18%, transparent);
-	--input: color-mix(in srgb, #ffffff 10%, transparent);
-	--ring: #65e6ff;
-
-	--glow-primary: 0 0 24px color-mix(in srgb, #6f5bff 45%, transparent);
-	--glow-cyan: 0 0 20px color-mix(in srgb, #65e6ff 35%, transparent);
-	--glow-gold: 0 0 16px color-mix(in srgb, #d9b96e 30%, transparent);
 }
 
 @media (max-width: 640px) {
@@ -214,10 +184,6 @@ html {
 	color-scheme: only light;
 	height: 100%;
 	overflow: hidden;
-}
-
-[data-theme="mystic"] {
-	color-scheme: dark;
 }
 
 body {
@@ -268,23 +234,13 @@ button {
 	color: inherit;
 }
 
-@supports (scrollbar-width: thin) {
-	html {
-		scrollbar-width: thin;
-		scrollbar-color: color-mix(in oklch, var(--muted-foreground) 45%, transparent)
-			transparent;
-	}
+* {
+	scrollbar-width: none;
+	-ms-overflow-style: none;
 }
 
-::-webkit-scrollbar {
-	width: 8px;
-	height: 8px;
-}
-
-::-webkit-scrollbar-thumb {
-	background: color-mix(in oklch, var(--muted-foreground) 35%, transparent);
-}
-
-::-webkit-scrollbar-track {
-	background: transparent;
+*::-webkit-scrollbar {
+	display: none;
+	width: 0;
+	height: 0;
 }

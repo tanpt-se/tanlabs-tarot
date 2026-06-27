@@ -1,6 +1,6 @@
 ---
 description: Locked tarot card UX — do not regress sizing, hover preview, or draw flow
-globs: src/react-app/components/spread/TarotCard.tsx,src/react-app/App.css,src/react-app/providers/self-view-session-context.tsx,src/react-app/components/spread/SelfViewDeckScreen.tsx,src/react-app/components/spread/SpreadScreen.tsx
+globs: src/react-app/components/spread/TarotCard.tsx,src/react-app/App.css,src/react-app/providers/self-view-session-provider.tsx,src/react-app/components/spread/SelfViewDeckScreen.tsx,src/react-app/components/spread/SpreadScreen.tsx
 alwaysApply: false
 ---
 

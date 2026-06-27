@@ -1,11 +1,11 @@
 import { useEffect, useId, useRef } from "react";
 import { createPortal } from "react-dom";
-import { useEscapeKey } from "../../hooks/useEscapeKey";
-import { useSelfViewSession } from "../../hooks/useSelfViewSession";
+import { useEscapeKey } from "../../hooks/use-escape-key";
+import { useSelfViewSession } from "../../hooks/use-self-view-session";
 import { GameButton } from "../GameButton";
 import { GamePanel } from "../GamePanel";
 
-interface SelfViewConfirmModalProps {
+interface ConfirmModalProps {
 	title: string;
 	message: string;
 	confirmLabel: string;
@@ -14,14 +14,14 @@ interface SelfViewConfirmModalProps {
 	onCancel: () => void;
 }
 
-export function SelfViewConfirmModal({
+export function ConfirmModal({
 	title,
 	message,
 	confirmLabel,
 	cancelLabel,
 	onConfirm,
 	onCancel,
-}: SelfViewConfirmModalProps) {
+}: ConfirmModalProps) {
 	const { registerOverlay } = useSelfViewSession();
 	const titleId = useId();
 	const dialogRef = useRef<HTMLDivElement>(null);

@@ -1,6 +1,6 @@
-import { useLocale } from "../hooks/use-locale";
-import { useSelfView } from "../hooks/use-self-view";
-import { GameButton } from "./GameButton";
+import { useLocale } from "../../hooks/use-locale";
+import { useSelfView } from "../../hooks/use-self-view";
+import { GameButton } from "../GameButton";
 
 export function SelfViewModeButton() {
 	const { labels } = useLocale();

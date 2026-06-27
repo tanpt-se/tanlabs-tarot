@@ -1,5 +1,6 @@
 import { useLocale } from "../hooks/use-locale";
 import { GameButton } from "./GameButton";
+import { HelpIcon } from "./icons/HelpIcon";
 
 interface HelpButtonProps {
 	onClick: () => void;
@@ -17,9 +18,7 @@ export function HelpButton({ onClick }: HelpButtonProps) {
 			aria-label={labels.openHelp}
 			aria-haspopup="dialog"
 		>
-			<span className="help-button__mark" aria-hidden="true">
-				i
-			</span>
+			<HelpIcon />
 		</GameButton>
 	);
 }

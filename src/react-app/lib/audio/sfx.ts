@@ -1,4 +1,9 @@
 let audioContext: AudioContext | null = null;
+let sfxVolumeMultiplier = 1;
+
+export function setSfxVolumeMultiplier(volume: number): void {
+	sfxVolumeMultiplier = Math.min(1, Math.max(0, volume));
+}
 
 function getAudioContext(): AudioContext | null {
 	if (typeof window === "undefined") return null;
@@ -27,7 +32,7 @@ function playTone(
 	oscillator.type = type;
 	oscillator.frequency.setValueAtTime(frequency, ctx.currentTime);
 
-	gain.gain.setValueAtTime(volume, ctx.currentTime);
+	gain.gain.setValueAtTime(volume * sfxVolumeMultiplier, ctx.currentTime);
 	gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
 
 	oscillator.connect(gain);

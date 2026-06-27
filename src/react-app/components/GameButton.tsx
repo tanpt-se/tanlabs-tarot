@@ -61,6 +61,3 @@ export function GameButton({
 		</button>
 	);
 }
-
-export { GameButton as GlowButton };
-export type { GameButtonProps as GlowButtonProps };
