@@ -1904,6 +1904,7 @@
 	height: 100%;
 	object-fit: fill;
 	object-position: center;
+	background-color: transparent;
 }
 
 .tarot-card__face--front {
@@ -2135,6 +2136,23 @@
 	width: 100%;
 	min-height: 0;
 	padding: 0;
+	position: relative;
+}
+
+.self-view-empty-placeholder {
+	margin: 0;
+	padding: 0 1.5rem;
+	max-width: 22rem;
+	text-align: center;
+	font-family: var(--font-family);
+	font-size: clamp(1.45rem, 4.8vw, 2.15rem);
+	font-weight: var(--font-weight-heavy, 700);
+	line-height: 1.35;
+	letter-spacing: 0.03em;
+	color: color-mix(in srgb, var(--game-btn-text) 78%, var(--muted-foreground));
+	text-shadow: 0 0.12rem 0.35rem color-mix(in srgb, var(--palette-ink) 18%, transparent);
+	pointer-events: none;
+	user-select: none;
 }
 
 .self-view-screen[data-has-spread="true"] {
@@ -2194,6 +2212,23 @@
 	padding: 0.15rem 0;
 }
 
+.self-view-spread-wrap[data-layout-animating="true"] {
+	overflow: visible;
+	clip-path: none;
+}
+
+.self-view-screen[data-layout-animating="true"] {
+	overflow: visible;
+}
+
+.game-stage:has(.self-view-screen[data-layout-animating="true"]) {
+	overflow: visible;
+}
+
+.game-stage:has(.self-view-screen[data-layout-animating="true"]) .game-stage__content {
+	overflow: visible;
+}
+
 .self-view-card-focus-layer {
 	position: fixed;
 	inset: 0;
@@ -2229,6 +2264,30 @@
 	cursor: pointer;
 }
 
+/* Zoomed card — no hover/active scale (beats global gsap-flip rules). */
+.self-view-card-focus-layer .tarot-card[data-gsap-flip="true"] .tarot-card__inner,
+.self-view-card-focus-layer .tarot-card[data-gsap-flip="true"] .tarot-card__deal {
+	transition: none !important;
+}
+
+.self-view-card-focus-layer .tarot-card[data-gsap-flip="true"] .tarot-card__flip:not(:disabled):hover .tarot-card__inner,
+.self-view-card-focus-layer .tarot-card[data-gsap-flip="true"] .tarot-card__flip:not(:disabled):active .tarot-card__inner,
+.self-view-card-focus-layer .tarot-card[data-gsap-flip="true"] .tarot-card__flip[data-flipped="true"]:not(:disabled):hover .tarot-card__inner,
+.self-view-card-focus-layer .tarot-card[data-gsap-flip="true"] .tarot-card__flip[data-flipped="true"]:not(:disabled):active .tarot-card__inner,
+.self-view-card-focus-layer .tarot-card__flip:not(:disabled):hover .tarot-card__inner,
+.self-view-card-focus-layer .tarot-card__flip:not(:disabled):active .tarot-card__inner,
+.self-view-card-focus-layer .tarot-card__flip[data-flipped="true"]:not(:disabled):hover .tarot-card__inner,
+.self-view-card-focus-layer .tarot-card__flip[data-flipped="true"]:not(:disabled):active .tarot-card__inner {
+	transform: none !important;
+	box-shadow: none !important;
+}
+
+.self-view-card-focus-layer .tarot-card[data-gsap-flip="true"] .tarot-card__flip:not(:disabled):hover .tarot-card__deal,
+.self-view-card-focus-layer .tarot-card[data-gsap-flip="true"] .tarot-card__flip:not(:disabled):active .tarot-card__deal {
+	transform: none !important;
+	filter: none !important;
+}
+
 .self-view-card-focus-layer__card[data-pose-ready="true"] {
 	visibility: visible;
 }
@@ -2236,6 +2295,14 @@
 .self-view-spread .tarot-card--in-focus {
 	visibility: hidden;
 	pointer-events: none;
+}
+
+.self-view-card-slot {
+	visibility: hidden;
+	pointer-events: none;
+	flex: none;
+	width: var(--spread-card-width, var(--self-view-card-width));
+	aspect-ratio: var(--self-view-card-height-aspect, 1.72) / 1;
 }
 
 .self-view-spread {
@@ -2322,6 +2389,17 @@
 	overflow: visible;
 }
 
+.self-view-spread .tarot-card[data-self-view-layout-anim="true"] {
+	z-index: 3;
+	will-change: transform;
+	pointer-events: none;
+}
+
+.self-view-spread .tarot-card[data-self-view-layout-anim="true"] .tarot-card__inner,
+.self-view-spread .tarot-card[data-self-view-layout-anim="true"] .tarot-card__deal {
+	transition: none !important;
+}
+
 .self-view-spread .tarot-card[data-reveal-loading="true"] {
 	z-index: 2;
 }
@@ -2344,29 +2422,10 @@
 		transform: none !important;
 		box-shadow: none;
 	}
-
-	.self-view-spread .tarot-card[data-gsap-flip="true"] .tarot-card__flip:not(:disabled):hover .tarot-card__deal {
-		transform: scale(1.03);
-		filter: drop-shadow(
-			0 0.3rem 0.55rem color-mix(in srgb, var(--palette-gold) 20%, transparent)
-		);
-	}
-
-	.self-view-spread .tarot-card[data-gsap-flip="true"] .tarot-card__flip:not(:disabled):active .tarot-card__deal {
-		transform: scale(0.98);
-	}
 }
 
 .self-view-spread .tarot-card[data-gsap-flip="true"] .tarot-card__deal {
-	transition:
-		transform 0.2s ease,
-		filter 0.2s ease;
-}
-
-.self-view-card-focus-layer .tarot-card[data-gsap-flip="true"] .tarot-card__flip:hover .tarot-card__deal,
-.self-view-card-focus-layer .tarot-card[data-gsap-flip="true"] .tarot-card__flip:active .tarot-card__deal {
-	transform: none !important;
-	filter: none;
+	transition: none;
 }
 
 .self-view-spread__empty {

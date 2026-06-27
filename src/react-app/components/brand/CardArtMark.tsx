@@ -39,7 +39,7 @@ export function CardArtMark({
 					src={src}
 					alt={alt}
 					loading={eager ? "eager" : "lazy"}
-					decoding="async"
+					decoding={eager ? "sync" : "async"}
 					fetchPriority={eager ? "high" : "low"}
 					onLoad={onLoad}
 				/>

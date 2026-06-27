@@ -116,7 +116,8 @@ export const SelfViewCardFocusOverlay = forwardRef<
 				ref={shellRef}
 				className="self-view-card-focus-layer__card"
 				data-pose-ready={poseReady ? "true" : undefined}
-				onClick={() => {
+				onClick={(event) => {
+					event.stopPropagation();
 					void runClose();
 				}}
 			>

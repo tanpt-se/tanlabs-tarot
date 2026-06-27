@@ -13,11 +13,11 @@ export type SelfViewSessionContextValue = {
 	flippedIndices: Set<number>;
 	shuffling: boolean;
 	revealingIndex: number | null;
+	pendingDrawImageReady: boolean;
 	setViewingSessionId: (id: string | null) => void;
 	shuffleDeck: () => void;
 	drawOne: () => void;
-	completeCardReveal: (index: number) => void;
-	completeRevealFlip: (index: number) => void;
+	commitPendingDraw: () => void;
 	toggleCardFlip: (index: number) => void;
 	backToCurrent: () => void;
 	resetLiveSpread: () => void;

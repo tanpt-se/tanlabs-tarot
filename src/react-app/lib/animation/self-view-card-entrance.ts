@@ -1,97 +1,266 @@
 import gsap from "gsap";
-import { GSAP_EASE_OUT } from "./constants";
+import { GSAP_EASE_IN_OUT, GSAP_EASE_OUT } from "./constants";
 import { prefersReducedMotion } from "./reduced-motion";
 
-const NEW_CARD_ENTER_DURATION_S = 0.54;
+const SHIFT_DURATION_S = 0.5;
+const SHIFT_STAGGER_S = 0.03;
+const NEW_CARD_IN_PLACE_DURATION_S = 0.38;
+const ENTRANCE_START_SCALE = 0.9;
 
 export type ViewportPoint = {
 	x: number;
 	y: number;
 };
 
-export function getSelfViewDrawOrigin(): ViewportPoint | null {
-	if (typeof document === "undefined") return null;
+type ShiftPrep = {
+	dx: number;
+	dy: number;
+	scaleX: number;
+	scaleY: number;
+};
 
-	const draw = document.querySelector(".self-view-draw-float");
-	if (!draw) return null;
+export type SelfViewPreparedSlotReservation = {
+	shiftedCards: Map<number, ShiftPrep>;
+	slotIndex: number;
+	animatedElements: HTMLElement[];
+};
 
-	const rect = draw.getBoundingClientRect();
+export type SelfViewSlotReservationHandle = {
+	timeline: gsap.core.Timeline;
+	slotIndex: number;
+};
+
+export type SelfViewCardRevealHandle = {
+	timeline: gsap.core.Animation;
+	cardIndex: number;
+};
+
+const tweenDefaults = {
+	transformOrigin: "50% 50%",
+	force3D: true,
+	autoRound: false,
+} as const;
+
+function elementCenter(rect: DOMRect): ViewportPoint {
 	return {
 		x: rect.left + rect.width / 2,
 		y: rect.top + rect.height / 2,
 	};
 }
 
-function resetExistingCardTransforms(
-	cardRoots: Map<number, HTMLDivElement>,
-	upToIndex: number,
-): void {
-	for (let index = 0; index < upToIndex; index += 1) {
-		const element = cardRoots.get(index);
-		if (!element) continue;
-
-		gsap.killTweensOf(element);
-		gsap.set(element, { x: 0, y: 0, scale: 1, opacity: 1, clearProps: "transform" });
+function markLayoutAnimating(element: HTMLElement, animating: boolean): void {
+	if (animating) {
+		element.setAttribute("data-self-view-layout-anim", "true");
+	} else {
+		element.removeAttribute("data-self-view-layout-anim");
 	}
 }
 
-/** New card flies in from the draw button — existing cards stay put (layout snaps instantly). */
-export function animateSelfViewNewCardEntrance(
-	element: HTMLElement,
-	origin: ViewportPoint,
-): gsap.core.Tween | null {
-	if (prefersReducedMotion()) {
-		gsap.set(element, { x: 0, y: 0, scale: 1, opacity: 1 });
-		return null;
-	}
-
-	const last = element.getBoundingClientRect();
-	if (last.width <= 0 || last.height <= 0) return null;
-
-	const lastCenterX = last.left + last.width / 2;
-	const lastCenterY = last.top + last.height / 2;
-
+function releaseCardMotion(element: HTMLElement): void {
 	gsap.killTweensOf(element);
-
-	return gsap.fromTo(
-		element,
-		{
-			x: origin.x - lastCenterX,
-			y: origin.y - lastCenterY,
-			scale: 0.58,
-			opacity: 0,
-			transformOrigin: "50% 50%",
-			force3D: true,
-		},
-		{
-			x: 0,
-			y: 0,
-			scale: 1,
-			opacity: 1,
-			duration: NEW_CARD_ENTER_DURATION_S,
-			ease: GSAP_EASE_OUT,
-			overwrite: "auto",
-		},
-	);
+	markLayoutAnimating(element, false);
+	gsap.set(element, { clearProps: "transform,opacity" });
 }
 
-export function runSelfViewAddCardAnimation(options: {
+function computeFlipDelta(
+	element: HTMLElement,
+	oldRect: DOMRect,
+): ShiftPrep | null {
+	const current = element.getBoundingClientRect();
+	if (current.width <= 0 || current.height <= 0) return null;
+
+	const oldCenter = elementCenter(oldRect);
+	const newCenter = elementCenter(current);
+	const dx = oldCenter.x - newCenter.x;
+	const dy = oldCenter.y - newCenter.y;
+	const scaleX = oldRect.width / current.width;
+	const scaleY = oldRect.height / current.height;
+
+	if (
+		Math.abs(dx) < 0.5 &&
+		Math.abs(dy) < 0.5 &&
+		Math.abs(scaleX - 1) < 0.02 &&
+		Math.abs(scaleY - 1) < 0.02
+	) {
+		return null;
+	}
+
+	return { dx, dy, scaleX, scaleY };
+}
+
+export function captureSelfViewCardRects(
+	cardRoots: Map<number, HTMLDivElement>,
+): Map<number, DOMRect> {
+	const map = new Map<number, DOMRect>();
+	cardRoots.forEach((element, index) => {
+		map.set(index, DOMRect.fromRect(element.getBoundingClientRect()));
+	});
+	return map;
+}
+
+/** Phase 1 — shift existing cards into the layout that reserves the next slot. */
+export function prepareSelfViewSlotReservation(options: {
 	cardRoots: Map<number, HTMLDivElement>;
-	newCardIndex: number;
-	drawOrigin: ViewportPoint | null;
-}): gsap.core.Tween | null {
+	slotIndex: number;
+	oldCardRects: Map<number, DOMRect>;
+}): SelfViewPreparedSlotReservation | null {
 	if (prefersReducedMotion()) {
 		return null;
 	}
 
-	const { cardRoots, newCardIndex, drawOrigin } = options;
+	const { cardRoots, slotIndex, oldCardRects } = options;
+	if (!cardRoots.has(slotIndex)) return null;
 
-	resetExistingCardTransforms(cardRoots, newCardIndex);
+	const shiftedCards = new Map<number, ShiftPrep>();
+	const animatedElements: HTMLElement[] = [];
 
-	const newCard = cardRoots.get(newCardIndex);
-	if (!newCard || !drawOrigin) {
+	for (let index = 0; index < slotIndex; index += 1) {
+		const element = cardRoots.get(index);
+		const oldRect = oldCardRects.get(index);
+		if (!element || !oldRect) continue;
+
+		const delta = computeFlipDelta(element, oldRect);
+		if (!delta) {
+			releaseCardMotion(element);
+			continue;
+		}
+
+		shiftedCards.set(index, delta);
+		animatedElements.push(element);
+		gsap.killTweensOf(element);
+		markLayoutAnimating(element, true);
+		gsap.set(element, {
+			...tweenDefaults,
+			x: delta.dx,
+			y: delta.dy,
+			scaleX: delta.scaleX,
+			scaleY: delta.scaleY,
+		});
+	}
+
+	return { shiftedCards, slotIndex, animatedElements };
+}
+
+export function playSelfViewSlotReservation(
+	options: {
+		cardRoots: Map<number, HTMLDivElement>;
+		onComplete?: () => void;
+	},
+	prepared: SelfViewPreparedSlotReservation,
+): SelfViewSlotReservationHandle | null {
+	if (prefersReducedMotion()) {
+		options.onComplete?.();
 		return null;
 	}
 
-	return animateSelfViewNewCardEntrance(newCard, drawOrigin);
+	const { cardRoots, onComplete } = options;
+	const { shiftedCards, slotIndex, animatedElements } = prepared;
+
+	const finish = () => {
+		for (const element of animatedElements) {
+			releaseCardMotion(element);
+		}
+		requestAnimationFrame(() => {
+			onComplete?.();
+		});
+	};
+
+	if (shiftedCards.size === 0) {
+		finish();
+		return { timeline: gsap.timeline(), slotIndex };
+	}
+
+	const tl = gsap.timeline({ onComplete: finish });
+	let staggerIndex = 0;
+
+	shiftedCards.forEach((_delta, index) => {
+		const element = cardRoots.get(index);
+		if (!element) return;
+
+		tl.to(
+			element,
+			{
+				x: 0,
+				y: 0,
+				scaleX: 1,
+				scaleY: 1,
+				duration: SHIFT_DURATION_S,
+				ease: GSAP_EASE_IN_OUT,
+				overwrite: "auto",
+				...tweenDefaults,
+			},
+			staggerIndex * SHIFT_STAGGER_S,
+		);
+		staggerIndex += 1;
+	});
+
+	return { timeline: tl, slotIndex };
+}
+
+/** Phase 2 — reveal card in place at its reserved slot (no fly-in from elsewhere). */
+export function playSelfViewCardInPlaceReveal(options: {
+	cardRoot: HTMLElement;
+	cardIndex: number;
+	onComplete?: () => void;
+}): SelfViewCardRevealHandle | null {
+	if (prefersReducedMotion()) {
+		options.onComplete?.();
+		return null;
+	}
+
+	const { cardRoot, cardIndex, onComplete } = options;
+	const rect = cardRoot.getBoundingClientRect();
+	if (rect.width <= 0 || rect.height <= 0) {
+		onComplete?.();
+		return null;
+	}
+
+	gsap.killTweensOf(cardRoot);
+	markLayoutAnimating(cardRoot, true);
+	gsap.set(cardRoot, {
+		...tweenDefaults,
+		scaleX: ENTRANCE_START_SCALE,
+		scaleY: ENTRANCE_START_SCALE,
+		opacity: 0,
+	});
+
+	const tween = gsap.to(cardRoot, {
+		scaleX: 1,
+		scaleY: 1,
+		opacity: 1,
+		duration: NEW_CARD_IN_PLACE_DURATION_S,
+		ease: GSAP_EASE_OUT,
+		overwrite: "auto",
+		...tweenDefaults,
+		onComplete: () => {
+			releaseCardMotion(cardRoot);
+			requestAnimationFrame(() => {
+				onComplete?.();
+			});
+		},
+	});
+
+	return { timeline: tween, cardIndex };
+}
+
+export function killSelfViewSlotReservation(
+	handle: SelfViewSlotReservationHandle | null,
+	animatedElements: Iterable<HTMLElement>,
+): void {
+	if (!handle) return;
+	handle.timeline.kill();
+	for (const element of animatedElements) {
+		releaseCardMotion(element);
+	}
+}
+
+export function killSelfViewCardInPlaceReveal(
+	handle: SelfViewCardRevealHandle | null,
+	cardRoot: HTMLElement | null,
+): void {
+	if (!handle) return;
+	handle.timeline.kill();
+	if (cardRoot) {
+		releaseCardMotion(cardRoot);
+	}
 }

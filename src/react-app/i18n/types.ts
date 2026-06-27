@@ -54,6 +54,7 @@ export type UiLabels = {
 	selfViewMode: string;
 	selfViewModeDesc: string;
 	selfViewDrawOne: string;
+	selfViewCardPlaceholder: string;
 	selfViewClear: string;
 	selfViewResetTitle: string;
 	selfViewResetMessage: string;

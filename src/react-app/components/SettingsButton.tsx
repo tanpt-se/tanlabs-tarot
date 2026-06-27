@@ -1,6 +1,6 @@
+import { Settings } from "lucide-react";
 import { useLocale } from "../hooks/use-locale";
 import { GameButton } from "./GameButton";
-import { SettingsIcon } from "./icons/SettingsIcon";
 
 interface SettingsButtonProps {
 	onClick: () => void;
@@ -23,7 +23,12 @@ export function SettingsButton({ onClick, fullWidth = false }: SettingsButtonPro
 			{fullWidth ? (
 				labels.openSettings
 			) : (
-				<SettingsIcon />
+				<Settings
+					className="game-button__icon"
+					aria-hidden="true"
+					strokeWidth={1.75}
+					absoluteStrokeWidth
+				/>
 			)}
 		</GameButton>
 	);

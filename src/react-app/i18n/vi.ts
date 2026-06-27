@@ -67,6 +67,7 @@ export const vi: UiLabels = {
 	selfViewModeDesc:
 		"Chỉ trải bài — không có narrator, câu hỏi hay lời giải.",
 	selfViewDrawOne: "Rút một lá",
+	selfViewCardPlaceholder: "Card sẽ được xuất hiện ở đây",
 	selfViewClear: "Xóa",
 	selfViewResetTitle: "Trải bài mới?",
 	selfViewResetMessage:

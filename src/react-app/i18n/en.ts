@@ -67,6 +67,7 @@ export const en: UiLabels = {
 	selfViewModeDesc:
 		"Spread cards only — no narrator, questions, or card meanings.",
 	selfViewDrawOne: "Draw a card",
+	selfViewCardPlaceholder: "Your card will appear here",
 	selfViewClear: "Clear",
 	selfViewResetTitle: "Start a new spread?",
 	selfViewResetMessage:
