@@ -39,6 +39,8 @@ interface TarotCardProps {
 	disableHoverPreview?: boolean;
 	uprightPreview?: boolean;
 	flipMode?: "gsap-2d" | "css-3d";
+	revealFlipOnMount?: boolean;
+	instantFlip?: boolean;
 }
 
 function canHoverPreview() {
@@ -62,6 +64,8 @@ export const TarotCard = memo(function TarotCard({
 	disableHoverPreview = false,
 	uprightPreview = false,
 	flipMode = "gsap-2d",
+	revealFlipOnMount = false,
+	instantFlip = false,
 }: TarotCardProps) {
 	const { labels } = useLocale();
 	const cardId = card.id as CardId;
@@ -140,6 +144,20 @@ export const TarotCard = memo(function TarotCard({
 		if (prevFlippedRef.current === flipped) return;
 
 		prevFlippedRef.current = flipped;
+
+		if (instantFlip) {
+			if (is3DFlip) {
+				setCardFlip3DInstant(flipped, inner);
+			} else {
+				setCardFlipInstant(flipped, inner, back, front);
+			}
+			if (revealFlipPendingRef.current && flipped) {
+				revealFlipPendingRef.current = false;
+				onRevealFlipCompleteRef.current?.(index);
+			}
+			return;
+		}
+
 		setFlipAnimating(true);
 
 		const timeline = is3DFlip
@@ -155,16 +173,21 @@ export const TarotCard = memo(function TarotCard({
 				onRevealFlipCompleteRef.current?.(index);
 			}
 		});
-	}, [flipped, index, is3DFlip]);
+	}, [flipped, index, instantFlip, is3DFlip]);
 
 	useEffect(() => {
-		if (dealIndex === undefined || !dealRef.current || dealPlayedRef.current) {
+		if (
+			instantFlip ||
+			dealIndex === undefined ||
+			!dealRef.current ||
+			dealPlayedRef.current
+		) {
 			return;
 		}
 
 		dealPlayedRef.current = true;
 		animateCardDeal(dealRef.current, dealIndex);
-	}, [dealIndex]);
+	}, [dealIndex, instantFlip]);
 
 	useEffect(() => {
 		if (!loadWhenVisible) {
@@ -219,7 +242,8 @@ export const TarotCard = memo(function TarotCard({
 			return;
 		}
 
-		if (!frontReady || revealReadySentRef.current) {
+		const canStartReveal = revealFlipOnMount || frontReady;
+		if (!canStartReveal || revealReadySentRef.current) {
 			return;
 		}
 
@@ -229,7 +253,7 @@ export const TarotCard = memo(function TarotCard({
 				onRevealReadyRef.current?.(index);
 			});
 		});
-	}, [frontReady, index, revealLoading]);
+	}, [frontReady, index, revealFlipOnMount, revealLoading]);
 
 	const handleFrontLoad = useCallback(() => {
 		setFrontReady(true);

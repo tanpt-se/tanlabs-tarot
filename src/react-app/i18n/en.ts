@@ -56,11 +56,12 @@ export const en: UiLabels = {
 	aboutLinkedInLabel: "LinkedIn",
 	aboutFacebookLabel: "Facebook",
 	aboutPhoneLabel: "Phone",
-	aboutWhatsNew: "What's new in 0.4",
+	aboutWhatsNew: "What's new in 0.5",
 	aboutUpdateNotes: [
-		"Self-view: visible deck pile by the draw button; cards arc from the deck into the spread.",
-		"True 3D card flip on reveal after draw, with sparkle and synced sound.",
-		"Smoother layout shifts when adding cards; art preloads before the flip.",
+		"Self-view spread layout rebuilt: steadier card sizes from the first draw through full spreads.",
+		"Wide screens (980px+): second row from five cards; up to five or six cards per row on larger spreads. Mobile stays capped at four per row.",
+		"Card zoom on wide screens unlocks once five or more cards are on the table.",
+		"Normalized card artwork for a consistent aspect ratio across the deck.",
 	],
 	selfViewMode: "I'm Tarot Reader",
 	selfViewModeDesc:

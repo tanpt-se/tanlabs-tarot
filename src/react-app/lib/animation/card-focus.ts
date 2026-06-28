@@ -20,7 +20,6 @@ export function freezeCardFocusRect(rect: DOMRectReadOnly): CardFocusRect {
 	};
 }
 
-/** Fixed zoom width — same as a lone card in the spread. */
 function getSelfViewFocusTargetWidth(): number {
 	return getSelfViewSingleCardWidth();
 }

@@ -56,11 +56,12 @@ export const vi: UiLabels = {
 	aboutLinkedInLabel: "LinkedIn",
 	aboutFacebookLabel: "Facebook",
 	aboutPhoneLabel: "Điện thoại",
-	aboutWhatsNew: "Mới trong 0.4",
+	aboutWhatsNew: "Mới trong 0.5",
 	aboutUpdateNotes: [
-		"Self-view: bộ bài hiển thị cạnh nút rút, lá bay theo cung từ bộ bài vào spread.",
-		"Lật bài 3D khi mở mặt sau khi rút — có sparkle và âm thanh đồng bộ.",
-		"Giữ layout shift mượt khi thêm lá; preload art trước khi lật.",
+		"Làm lại bố cục self-view: kích thước lá ổn định từ lần rút đầu đến khi spread đầy.",
+		"Màn rộng (≥980px): từ 5 lá xuống hàng 2; spread lớn lên tới 5–6 lá mỗi hàng. Mobile giữ tối đa 4 lá/hàng.",
+		"Zoom trên màn rộng chỉ bật khi đã có từ 5 lá trở lên trên bàn.",
+		"Chuẩn hóa ảnh lá bài để tỉ lệ đồng nhất trên cả bộ bài.",
 	],
 	selfViewMode: "Tôi là Tarot Reader",
 	selfViewModeDesc:

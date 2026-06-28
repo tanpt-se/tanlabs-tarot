@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type RefObject } from "react";
 import { useLocale } from "../../hooks/use-locale";
 import { useSelfViewSession } from "../../hooks/use-self-view-session";
 import {
@@ -13,16 +13,16 @@ import { SelfViewRestartButton } from "./SelfViewRestartButton";
 
 type SelfViewDrawBarProps = {
 	drawDisabled: boolean;
-	isLoading: boolean;
 	onDraw: () => void;
 	onWarmDraw: () => void;
+	dealOriginRef?: RefObject<HTMLButtonElement | null>;
 };
 
 export function SelfViewDrawBar({
 	drawDisabled,
-	isLoading,
 	onDraw,
 	onWarmDraw,
+	dealOriginRef,
 }: SelfViewDrawBarProps) {
 	const { labels } = useLocale();
 	const {
@@ -111,12 +111,13 @@ export function SelfViewDrawBar({
 					tone="light"
 					layout="text"
 					className="self-view-bottom-action"
+					buttonRef={dealOriginRef}
 					onClick={onDraw}
 					onPointerEnter={onWarmDraw}
 					onFocus={onWarmDraw}
 					disabled={drawDisabled}
 				>
-					{isLoading ? labels.loading : labels.selfViewDrawOne}
+					{labels.selfViewDrawOne}
 				</GameButton>
 				<SelfViewRestartButton
 					onClick={() => setResetModalOpen(true)}

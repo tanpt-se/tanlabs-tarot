@@ -23,6 +23,10 @@
 	gap: 0.35rem;
 }
 
+.app-shell[data-self-view="true"] .app-screen {
+	overflow: visible;
+}
+
 .app {
 	flex: 1 1 auto;
 	min-height: 0;
@@ -86,6 +90,23 @@
 	min-height: 0;
 	display: flex;
 	flex-direction: column;
+	overflow: hidden;
+}
+
+.self-view-shell {
+	--self-view-draw-reserve: calc(var(--game-menu-item-min-height) + 0.85rem + 0.3rem);
+	flex: 1;
+	min-height: 0;
+	display: flex;
+	flex-direction: column;
+	overflow: visible;
+}
+
+.self-view-shell > .game-stage {
+	flex: 1 1 auto;
+	min-height: 0;
+	height: auto;
+	max-height: none;
 	overflow: hidden;
 }
 
@@ -1946,7 +1967,7 @@
 .tarot-card__face .card-frame__image {
 	width: 100%;
 	height: 100%;
-	object-fit: fill;
+	object-fit: cover;
 	object-position: center;
 	background-color: transparent;
 }
@@ -2165,10 +2186,11 @@
 .self-view-screen {
 	--self-view-spread-gap: 0.42rem;
 	--self-view-card-anim-pad-block: 0.7rem;
-	--self-view-layout-rows: 2;
+	--self-view-layout-rows: 3;
 	--self-view-safe-pad-bottom: 2.25rem;
 	--self-view-spread-max-width: 100%;
-	--self-view-draw-reserve: calc(var(--game-menu-item-min-height) + 0.85rem);
+	--self-view-spread-table-width: min(100%, 980px);
+	--card-art-aspect-ratio: 400 / 680;
 	--self-view-spread-available-h: calc(100dvh - var(--frame-top) - var(--frame-bottom) - var(--button-height) - 0.35rem - var(--self-view-draw-reserve) - 0.5rem);
 	display: flex;
 	flex-direction: column;
@@ -2198,24 +2220,29 @@
 }
 
 .self-view-screen[data-has-spread="true"] {
-	padding-bottom: var(--self-view-draw-reserve);
-	box-sizing: border-box;
 	overflow: hidden;
 }
 
 .self-view-draw-float {
-	position: fixed;
-	left: 50%;
-	bottom: calc(var(--frame-bottom) + 1rem);
+	flex: 0 0 auto;
+	position: relative;
 	z-index: var(--z-self-view-draw);
 	display: flex;
 	align-items: stretch;
 	justify-content: center;
 	gap: 0.45rem;
-	width: min(24rem, calc(100% - 2 * var(--frame-side)));
-	transform: translateX(-50%);
+	width: 100%;
+	max-width: 24rem;
+	margin-inline: auto;
+	margin-top: 0.35rem;
+	padding-bottom: 0.3rem;
+	overflow: visible;
 	pointer-events: auto;
 	--self-view-draw-bar-height: var(--game-menu-item-min-height);
+}
+
+.self-view-draw-float > .game-button {
+	flex-shrink: 0;
 }
 
 .self-view-draw-float>.game-button {
@@ -2326,23 +2353,6 @@
 	box-shadow: 0 1px 0 color-mix(in srgb, var(--foreground) 20%, transparent);
 }
 
-.self-view-deal-ghost {
-	overflow: visible;
-}
-
-.self-view-deal-ghost__card {
-	width: 100%;
-	height: 100%;
-	border-radius: 0.25rem;
-	overflow: hidden;
-	box-shadow: 0 0.35rem 1rem color-mix(in srgb, var(--foreground) 18%, transparent);
-}
-
-.self-view-deal-ghost__card .card-back--spread {
-	width: 100%;
-	height: 100%;
-}
-
 .self-view-bottom-action {
 	flex: 1;
 	min-width: 0;
@@ -2368,7 +2378,7 @@
 	min-height: 0;
 	min-width: 0;
 	width: 100%;
-	max-width: var(--self-view-spread-max-width, 100%);
+	max-width: var(--self-view-spread-table-width, var(--self-view-spread-max-width, 100%));
 	margin-inline: auto;
 	container-type: size;
 	container-name: self-view-spread;
@@ -2376,27 +2386,14 @@
 	padding: 0.15rem 0;
 }
 
-.self-view-spread-wrap[data-layout-animating="true"] {
-	overflow: visible;
-	min-height: var(--self-view-spread-measured-h, auto);
-}
-
-.self-view-screen[data-layout-animating="true"] {
-	overflow: visible;
-}
-
-.app-screen:has(.self-view-screen[data-layout-animating="true"]),
-.game-stage:has(.self-view-screen[data-layout-animating="true"]),
-.game-stage:has(.self-view-screen[data-layout-animating="true"]) .game-stage__content {
-	overflow: visible;
-}
-
 .self-view-card-focus-layer {
 	position: fixed;
 	inset: 0;
 	z-index: var(--z-self-view-zoom);
 	pointer-events: auto;
-	perspective: 1200px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
 }
 
 .self-view-card-focus-layer__card {
@@ -2406,9 +2403,16 @@
 	pointer-events: auto;
 	cursor: pointer;
 	transform-style: preserve-3d;
-	will-change: transform;
 	visibility: hidden;
 	--spread-card-width: 100%;
+}
+
+.self-view-card-focus-layer__card--static {
+	position: relative;
+	left: auto;
+	top: auto;
+	visibility: visible;
+	will-change: auto;
 }
 
 .self-view-card-focus-layer__card .tarot-card {
@@ -2477,6 +2481,18 @@
 	pointer-events: none;
 }
 
+.self-view-card-slot--mold-empty {
+	flex: 0 0 auto;
+}
+
+.self-view-spread__slot-spacer {
+	flex: 0 0 var(--self-view-card-width);
+	width: var(--self-view-card-width);
+	aspect-ratio: var(--card-art-aspect-ratio, 400 / 680);
+	visibility: hidden;
+	pointer-events: none;
+}
+
 .self-view-card-slot .tarot-card__flip {
 	border: none;
 	background: transparent;
@@ -2517,12 +2533,25 @@
 	max-width: 100%;
 }
 
+.self-view-spread[data-mold="true"] .self-view-spread__row {
+	justify-content: center;
+	width: calc(
+		var(--self-view-row-cols) * var(--self-view-card-width) +
+			(var(--self-view-row-cols) - 1) * var(--self-view-spread-gap)
+	);
+	max-width: min(100%, var(--self-view-spread-table-width, 100%));
+	margin-inline: auto;
+}
+
+.self-view-spread[data-mold="true"] .tarot-card__inner {
+	aspect-ratio: var(--card-art-aspect-ratio, 400 / 680);
+}
+
 .self-view-spread .tarot-card {
 	width: var(--self-view-card-width);
-	flex: 0 0 auto;
-	max-width: 100%;
-	--tarot-card-anim-pad: 0.35rem;
+	flex: 0 0 var(--self-view-card-width);
 	overflow: visible;
+	--tarot-card-anim-pad: 0.35rem;
 	transition: opacity 0.28s ease;
 }
 
@@ -2534,43 +2563,6 @@
 .self-view-spread .tarot-card--focus-handoff {
 	opacity: 1;
 	pointer-events: auto;
-	transition: none !important;
-}
-
-.self-view-spread[data-layout-flight="true"] {
-	position: relative;
-}
-
-.self-view-spread[data-layout-flight="true"] .tarot-card[data-self-view-flight="true"] {
-	position: absolute;
-	margin: 0;
-	z-index: 4;
-	transition: none;
-	will-change: left, top, width, height;
-	pointer-events: none;
-}
-
-.self-view-spread .tarot-card[data-self-view-layout-anim="true"] {
-	z-index: 3;
-	pointer-events: none;
-	transition: none;
-	will-change: transform;
-	backface-visibility: hidden;
-	-webkit-backface-visibility: hidden;
-}
-
-.self-view-spread .tarot-card[data-self-view-layout-anim="true"] .tarot-card__deal {
-	opacity: 1;
-}
-
-.self-view-spread .tarot-card[data-self-view-layout-anim="true"] .tarot-card__face--front,
-.self-view-spread .tarot-card[data-self-view-layout-anim="true"] .tarot-card__face--front .card-frame,
-.self-view-spread .tarot-card[data-self-view-layout-anim="true"] .tarot-card__face--front .card-frame__image {
-	background: var(--card);
-}
-
-.self-view-spread .tarot-card[data-self-view-layout-anim="true"] .tarot-card__inner,
-.self-view-spread .tarot-card[data-self-view-layout-anim="true"] .tarot-card__deal {
 	transition: none !important;
 }
 
@@ -2840,7 +2832,8 @@
 
 @media (orientation: landscape) and (min-width: 641px) {
 	.self-view-screen {
-		--self-view-spread-max-width: 60vw;
+		--self-view-spread-max-width: 100%;
+		--self-view-spread-table-width: min(100%, 980px);
 	}
 }
 
@@ -2854,9 +2847,16 @@
 	}
 
 	.self-view-draw-float {
-		width: min(calc(100% - 1.5rem), 24rem);
-		bottom: calc(var(--frame-bottom) + 0.75rem);
+		max-width: none;
 		gap: 0.35rem;
+		margin-top: 0.25rem;
+	}
+
+	.self-view-draw-float .self-view-bottom-action {
+		flex: 1 1 0;
+		display: flex;
+		min-width: 0;
+		width: auto;
 	}
 }
 

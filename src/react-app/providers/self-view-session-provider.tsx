@@ -1,6 +1,5 @@
 import {
 	useCallback,
-	useEffect,
 	useMemo,
 	useRef,
 	useState,
@@ -63,15 +62,7 @@ export function SelfViewSessionProvider({ children }: { children: ReactNode }) {
 		() => new Set(),
 	);
 	const [shuffling, setShuffling] = useState(false);
-	const [revealingIndex, setRevealingIndex] = useState<number | null>(null);
-	const [pendingDrawImageReady, setPendingDrawImageReady] = useState(false);
-	const pendingDrawCardRef = useRef<DrawnCard | null>(null);
 	const overlayCountRef = useRef(0);
-	const revealingIndexRef = useRef<number | null>(null);
-
-	useEffect(() => {
-		revealingIndexRef.current = revealingIndex;
-	}, [revealingIndex]);
 
 	const viewingSession = useMemo(
 		() => sessions.find((session) => session.id === viewingSessionId) ?? null,
@@ -97,9 +88,6 @@ export function SelfViewSessionProvider({ children }: { children: ReactNode }) {
 		setDeck(fresh.deck);
 		setDrawnCards(fresh.drawnCards);
 		setFlippedIndices(fresh.flippedIndices);
-		setRevealingIndex(null);
-		setPendingDrawImageReady(false);
-		pendingDrawCardRef.current = null;
 		setViewingSessionId(null);
 	}, []);
 
@@ -110,7 +98,7 @@ export function SelfViewSessionProvider({ children }: { children: ReactNode }) {
 	}, [archiveSpread, drawnCards]);
 
 	const shuffleDeck = useCallback(() => {
-		if (isViewingHistory || shuffling || revealingIndex !== null || deck.length === 0) {
+		if (isViewingHistory || shuffling || deck.length === 0) {
 			return;
 		}
 
@@ -123,15 +111,10 @@ export function SelfViewSessionProvider({ children }: { children: ReactNode }) {
 			});
 			setShuffling(false);
 		}, SELF_VIEW_SHUFFLE_MS);
-	}, [deck.length, isViewingHistory, revealingIndex, shuffling]);
-
-	const clearRevealLock = useCallback((index: number) => {
-		if (revealingIndexRef.current !== index) return;
-		setRevealingIndex(null);
-	}, []);
+	}, [deck.length, isViewingHistory, shuffling]);
 
 	const drawOne = useCallback(() => {
-		if (isViewingHistory || revealingIndex !== null) return;
+		if (isViewingHistory || shuffling) return;
 		if (drawnCards.length >= SELF_VIEW_MAX_SPREAD_CARDS) return;
 
 		const result = drawOneCard(deck);
@@ -139,48 +122,23 @@ export function SelfViewSessionProvider({ children }: { children: ReactNode }) {
 
 		const nextIndex = drawnCards.length;
 		setDeck(result.deck);
-		pendingDrawCardRef.current = result.card;
-		setPendingDrawImageReady(false);
-		setRevealingIndex(nextIndex);
-
-		void loadCardImage(result.card.id as CardId).then(() => {
-			if (revealingIndexRef.current !== nextIndex) return;
-			setPendingDrawImageReady(true);
-		});
-	}, [deck, drawnCards.length, isViewingHistory, revealingIndex]);
-
-	const commitPendingDraw = useCallback(() => {
-		const card = pendingDrawCardRef.current;
-		const index = revealingIndexRef.current;
-		if (!card || index === null) return;
-
-		setDrawnCards((current) => [...current, card]);
-		pendingDrawCardRef.current = null;
-	}, []);
-
-	const revealCard = useCallback((index: number) => {
-		if (revealingIndexRef.current !== index) return;
-
+		setDrawnCards((current) => [...current, result.card]);
 		setFlippedIndices((current) => {
 			const next = new Set(current);
-			next.add(index);
+			next.add(nextIndex);
 			return next;
 		});
-	}, []);
 
-	const completeRevealFlip = useCallback(
-		(index: number) => {
-			clearRevealLock(index);
-		},
-		[clearRevealLock],
-	);
+		void loadCardImage(result.card.id as CardId);
+		preloadTopOfDeck(result.deck);
+	}, [deck, drawnCards.length, isViewingHistory, shuffling]);
 
 	const toggleCardFlip = useCallback(
 		(index: number) => {
-			if (isViewingHistory || revealingIndex === index) return;
+			if (isViewingHistory) return;
 			setFlippedIndices((current) => toggleSetIndex(current, index));
 		},
-		[isViewingHistory, revealingIndex],
+		[isViewingHistory],
 	);
 
 	const backToCurrent = useCallback(() => {
@@ -197,14 +155,9 @@ export function SelfViewSessionProvider({ children }: { children: ReactNode }) {
 			drawnCards,
 			flippedIndices,
 			shuffling,
-			revealingIndex,
-			pendingDrawImageReady,
 			setViewingSessionId,
 			shuffleDeck,
 			drawOne,
-			commitPendingDraw,
-			revealCard,
-			completeRevealFlip,
 			toggleCardFlip,
 			backToCurrent,
 			resetLiveSpread,
@@ -221,13 +174,8 @@ export function SelfViewSessionProvider({ children }: { children: ReactNode }) {
 			drawnCards,
 			flippedIndices,
 			shuffling,
-			revealingIndex,
-			pendingDrawImageReady,
 			shuffleDeck,
 			drawOne,
-			commitPendingDraw,
-			revealCard,
-			completeRevealFlip,
 			toggleCardFlip,
 			backToCurrent,
 			resetLiveSpread,

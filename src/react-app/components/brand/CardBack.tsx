@@ -1,4 +1,8 @@
 import { CARD_BACK_CLASSIC } from "../../assets";
+import {
+	CARD_ART_HEIGHT,
+	CARD_ART_WIDTH,
+} from "../../lib/tarot/card-art-metrics";
 
 interface CardBackProps {
 	alt?: string;
@@ -17,7 +21,13 @@ export function CardBack({
 			data-reversed={reversed}
 		>
 			<div className="card-frame">
-				<img className="card-frame__image" src={CARD_BACK_CLASSIC} alt={alt} />
+				<img
+					className="card-frame__image"
+					src={CARD_BACK_CLASSIC}
+					alt={alt}
+					width={CARD_ART_WIDTH}
+					height={CARD_ART_HEIGHT}
+				/>
 			</div>
 		</div>
 	);

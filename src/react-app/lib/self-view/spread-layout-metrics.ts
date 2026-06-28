@@ -1,9 +1,9 @@
 import {
-	SELF_VIEW_DESKTOP_SPREAD_WIDTH_RATIO,
 	SELF_VIEW_MOBILE_BREAKPOINT_PX,
 	shouldCapSelfViewSpreadWidth,
 	type SelfViewViewportConstraints,
 } from "./spread-layout-engine";
+import { resolveSelfViewTableContentWidthPx } from "./spread-table-layout";
 
 const DEFAULT_REM_PX = 16;
 const DEFAULT_SAFE_BOTTOM_REM = 2.25;
@@ -40,7 +40,6 @@ export function getRemPx(): number {
 	return parseFloat(getComputedStyle(document.documentElement).fontSize) || DEFAULT_REM_PX;
 }
 
-/** Default spread constraints when DOM is unavailable (SSR / tests). */
 export function createDefaultViewportConstraints(
 	viewportWidth: number,
 	viewportHeight: number,
@@ -50,7 +49,11 @@ export function createDefaultViewportConstraints(
 	const side = isMobile ? 0.75 * rem : 1.25 * rem;
 	const fullWidth = viewportWidth - 2 * side;
 	const availableWidth = shouldCapSelfViewSpreadWidth(viewportWidth, viewportHeight)
-		? Math.min(fullWidth, viewportWidth * SELF_VIEW_DESKTOP_SPREAD_WIDTH_RATIO)
+		? resolveSelfViewTableContentWidthPx(
+				fullWidth,
+				viewportWidth,
+				viewportHeight,
+			)
 		: fullWidth;
 
 	return {
@@ -76,13 +79,12 @@ export function createDefaultViewportConstraints(
 	};
 }
 
-/** Read live viewport constraints from the self-view screen chrome. */
 export function readSelfViewViewportConstraints(): SelfViewViewportConstraints | null {
 	if (typeof window === "undefined") return null;
 
 	const shell = document.querySelector(".app-shell");
+	const selfViewShell = document.querySelector(".self-view-shell");
 	const screen = document.querySelector(".self-view-screen");
-	const spreadWrap = document.querySelector(".self-view-spread-wrap");
 	const rem = getRemPx();
 
 	const frameSide = readCssLengthPx(shell, "--frame-side", 1.25, rem);
@@ -100,7 +102,12 @@ export function readSelfViewViewportConstraints(): SelfViewViewportConstraints |
 		3.85,
 		rem,
 	);
-	const drawReserve = readCssLengthPx(screen, "--self-view-draw-reserve", 5, rem);
+	const drawReserve = readCssLengthPx(
+		selfViewShell ?? screen,
+		"--self-view-draw-reserve",
+		5,
+		rem,
+	);
 	const colGapPx = readCssLengthPx(screen, "--self-view-spread-gap", 0.42, rem);
 	const appGap = 0.35 * rem;
 	const safeTop = 0.5 * rem;
@@ -117,21 +124,14 @@ export function readSelfViewViewportConstraints(): SelfViewViewportConstraints |
 	if (
 		shouldCapSelfViewSpreadWidth(window.innerWidth, window.innerHeight)
 	) {
-		const maxSpreadWidthPx = readCssLengthPx(
-			screen,
-			"--self-view-spread-max-width",
-			0,
-			rem,
+		availableWidth = resolveSelfViewTableContentWidthPx(
+			screenWidth,
+			window.innerWidth,
+			window.innerHeight,
 		);
-		const widthCap =
-			maxSpreadWidthPx > 0
-				? maxSpreadWidthPx
-				: window.innerWidth * SELF_VIEW_DESKTOP_SPREAD_WIDTH_RATIO;
-		availableWidth = Math.min(screenWidth, widthCap);
 	}
 
-	const wrapHeight =
-		spreadWrap?.clientHeight ||
+	const projectedHeight =
 		window.innerHeight -
 		frameTop -
 		frameBottom -
@@ -141,7 +141,7 @@ export function readSelfViewViewportConstraints(): SelfViewViewportConstraints |
 		drawReserve -
 		0.5 * rem;
 
-	const availableHeight = Math.max(0, wrapHeight - safeTop - safeBottom);
+	const availableHeight = Math.max(0, projectedHeight - safeTop - safeBottom);
 
 	return {
 		availableWidth,

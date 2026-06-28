@@ -1,4 +1,8 @@
 import { useLayoutEffect, useRef } from "react";
+import {
+	CARD_ART_HEIGHT,
+	CARD_ART_WIDTH,
+} from "../../lib/tarot/card-art-metrics";
 import type { CardImage } from "../../lib/tarot/card-image";
 
 interface CardArtMarkProps {
@@ -38,6 +42,8 @@ export function CardArtMark({
 					className="card-frame__image"
 					src={src}
 					alt={alt}
+					width={CARD_ART_WIDTH}
+					height={CARD_ART_HEIGHT}
 					loading={eager ? "eager" : "lazy"}
 					decoding={eager ? "sync" : "async"}
 					fetchPriority={eager ? "high" : "low"}

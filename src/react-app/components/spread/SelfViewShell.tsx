@@ -1,7 +1,8 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useBackgroundMusic } from "../../hooks/use-background-music";
 import { useAppChromeShortcuts } from "../../hooks/use-app-chrome-shortcuts";
 import { useLocale } from "../../hooks/use-locale";
+import { useSfx } from "../../hooks/use-sfx";
 import { SelfViewSessionProvider } from "../../providers/self-view-session-provider";
 import { useSelfViewSession } from "../../hooks/use-self-view-session";
 import {
@@ -12,7 +13,10 @@ import { GameToast } from "../GameToast";
 import { GameStage } from "../character/GameStage";
 import { ConfirmModal } from "../modals/ConfirmModal";
 import { SelfViewDeckScreen } from "./SelfViewDeckScreen";
+import { SelfViewDrawBar } from "../self-view/SelfViewDrawBar";
 import { HelpModal } from "../help/HelpModal";
+import { SELF_VIEW_MAX_SPREAD_CARDS } from "../../lib/self-view/spread-layout";
+import { preloadTopOfDeck } from "../../lib/tarot/card-image";
 
 interface SelfViewShellProps {
 	onSettings: () => void;
@@ -29,9 +33,12 @@ function SelfViewShellContent({
 }: SelfViewShellProps) {
 	const { labels } = useLocale();
 	const { enabled, toggle: toggleMusic } = useBackgroundMusic();
-	const { drawnCards, archiveCurrentSpread, hasOverlayOpen } = useSelfViewSession();
+	const { drawnCards, archiveCurrentSpread, hasOverlayOpen, deck, drawOne } =
+		useSelfViewSession();
+	const { playFlip, playCardDeal } = useSfx();
 	const [exitModalOpen, setExitModalOpen] = useState(false);
 	const [helpOpen, setHelpOpen] = useState(false);
+	const dealOriginRef = useRef<HTMLButtonElement>(null);
 	const [muteToast, setMuteToast] = useState<{
 		id: number;
 		message: string;
@@ -92,17 +99,40 @@ function SelfViewShellContent({
 		onExit();
 	}, [archiveCurrentSpread, onExit]);
 
+	const warmNextDraw = useCallback(() => {
+		preloadTopOfDeck(deck);
+	}, [deck]);
+
+	const handleDraw = useCallback(() => {
+		warmNextDraw();
+		drawOne();
+		playCardDeal();
+		playFlip();
+	}, [drawOne, playCardDeal, playFlip, warmNextDraw]);
+
+	const drawDisabled =
+		deck.length === 0 ||
+		drawnCards.length >= SELF_VIEW_MAX_SPREAD_CARDS;
+
 	return (
 		<>
-			<AppChrome
-				variant="minimal"
-				onSettings={onSettings}
-				onHelp={() => setHelpOpen(true)}
-				onBack={handleBackRequest}
-			/>
-			<GameStage layout="full">
-				<SelfViewDeckScreen />
-			</GameStage>
+			<div className="self-view-shell">
+				<AppChrome
+					variant="minimal"
+					onSettings={onSettings}
+					onHelp={() => setHelpOpen(true)}
+					onBack={handleBackRequest}
+				/>
+				<GameStage layout="full">
+					<SelfViewDeckScreen dealOriginRef={dealOriginRef} />
+				</GameStage>
+				<SelfViewDrawBar
+					drawDisabled={drawDisabled}
+					onDraw={handleDraw}
+					onWarmDraw={warmNextDraw}
+					dealOriginRef={dealOriginRef}
+				/>
+			</div>
 
 			{helpOpen ? (
 				<HelpModal onClose={() => setHelpOpen(false)} />

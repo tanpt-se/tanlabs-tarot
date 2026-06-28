@@ -1,7 +1,8 @@
-/** Matches `.tarot-card__inner` aspect-ratio 2 / 3.4 (height ÷ width). */
-export const SELF_VIEW_CARD_HEIGHT_ASPECT = 3.4 / 2;
+import { CARD_ART_HEIGHT_ASPECT } from "../tarot/card-art-metrics";
 
-export const SELF_VIEW_MAX_SPREAD_CARDS = 10;
+export const SELF_VIEW_CARD_HEIGHT_ASPECT = CARD_ART_HEIGHT_ASPECT;
+
+export const SELF_VIEW_MAX_SPREAD_CARDS = 12;
 
 export const SELF_VIEW_MIN_CARD_WIDTH_PX = 48;
 
@@ -11,7 +12,8 @@ export const SELF_VIEW_MOBILE_BREAKPOINT_PX = 640;
 
 export const SELF_VIEW_DESKTOP_SPREAD_WIDTH_RATIO = 0.6;
 
-/** Cap single-row card width so one card does not fill the entire spread. */
+export const SELF_VIEW_DESKTOP_SPREAD_MAX_WIDTH_PX = 980;
+
 export const SELF_VIEW_SINGLE_ROW_MAX_WIDTH_RATIO = 0.48;
 
 export function shouldCapSelfViewSpreadWidth(
@@ -55,11 +57,11 @@ export type SelfViewSpreadLayoutResult = {
 	spreadHeightPx: number;
 	spreadWidthPx: number;
 	maxCols: number;
-	/** @deprecated Use maxCols — kept for gradual migration */
+	/** @deprecated */
 	rowWidth: number;
-	/** @deprecated Use maxCols */
+	/** @deprecated */
 	sizingRowWidth: number;
-	/** @deprecated Use cardWidthPx */
+	/** @deprecated */
 	cardScale: number;
 };
 
@@ -77,7 +79,6 @@ export function getDeviceProfile(viewportWidth: number): SelfViewDeviceProfile {
 	};
 }
 
-/** Distribute cards across rows as evenly as possible (e.g. 7 → [3, 2, 2]). */
 export function distributeCardsToRows(
 	cardCount: number,
 	rowCount: number,
@@ -198,7 +199,6 @@ export function solveSpreadLayout(
 	return best;
 }
 
-/** Slot positions inside `.self-view-spread` (top-left origin, px). */
 export function computeSpreadSlotRects(
 	layout: SelfViewSpreadLayoutResult,
 ): Map<number, SelfViewSpreadSlotRect> {
