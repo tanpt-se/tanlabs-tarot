@@ -13,6 +13,7 @@ import { parseSelfViewCardSlotKey } from "../../lib/keyboard/self-view-card-slot
 import { preloadTopOfDeck } from "../../lib/tarot/card-image";
 import {
 	canSelfViewZoom,
+	clearSelfViewSpreadLayoutCache,
 	getSelfViewSpreadLayout,
 	getSelfViewSpreadStyle,
 	SELF_VIEW_MAX_SPREAD_CARDS,
@@ -29,6 +30,7 @@ import {
 	freezeCardFocusRect,
 	type CardFocusRect,
 } from "../../lib/animation/card-focus";
+import { CARD_FLIP_DURATION_MS } from "../../lib/animation/constants";
 
 type FocusPhase = "zoomed" | "closing" | "handoff";
 
@@ -40,7 +42,7 @@ type FocusState = {
 
 export function SelfViewDeckScreen() {
 	const { labels } = useLocale();
-	const { playFlip } = useSfx();
+	const { playFlip, playCardDeal } = useSfx();
 	const {
 		deck,
 		drawnCards,
@@ -50,14 +52,56 @@ export function SelfViewDeckScreen() {
 		displayedCards,
 		drawOne,
 		commitPendingDraw,
-		pendingDrawImageReady,
+		revealCard,
+		completeRevealFlip,
 		toggleCardFlip,
 		backToCurrent,
 		hasOverlayOpen,
 	} = useSelfViewSession();
 	const { held: reversedUprightHeld } = useReversedUprightHold();
 	const [focusState, setFocusState] = useState<FocusState | null>(null);
+	const [layoutMetricsRevision, setLayoutMetricsRevision] = useState(0);
 	const focusOverlayRef = useRef<SelfViewCardFocusOverlayHandle>(null);
+
+	useEffect(() => {
+		const refreshLayoutMetrics = () => {
+			clearSelfViewSpreadLayoutCache();
+			setLayoutMetricsRevision((revision) => revision + 1);
+		};
+
+		window.addEventListener("resize", refreshLayoutMetrics);
+
+		const screen = document.querySelector(".self-view-screen");
+		const observer =
+			screen &&
+			new ResizeObserver(() => {
+				refreshLayoutMetrics();
+			});
+
+		if (screen && observer) {
+			observer.observe(screen);
+		}
+
+		return () => {
+			window.removeEventListener("resize", refreshLayoutMetrics);
+			observer?.disconnect();
+		};
+	}, []);
+
+	const handleRevealSequenceComplete = useCallback(
+		(index: number) => {
+			completeRevealFlip(index);
+		},
+		[completeRevealFlip],
+	);
+
+	const completeCardReveal = useCallback(
+		(index: number) => {
+			playFlip();
+			revealCard(index);
+		},
+		[playFlip, revealCard],
+	);
 
 	const pendingSlotIndex = useMemo(() => {
 		if (isViewingHistory || revealingIndex === null) return null;
@@ -70,7 +114,7 @@ export function SelfViewDeckScreen() {
 
 	const spreadLayout = useMemo(
 		() => getSelfViewSpreadLayout(spreadSlotCount),
-		[spreadSlotCount],
+		[layoutMetricsRevision, spreadSlotCount],
 	);
 	const spreadStyle = useMemo(
 		() => getSelfViewSpreadStyle(spreadLayout),
@@ -82,19 +126,49 @@ export function SelfViewDeckScreen() {
 		spreadWrapRef,
 		registerCardRoot,
 		layoutAnimating,
+		layoutFlight,
 		spreadSurfaceStyle,
+		handleRevealFlipComplete,
 	} = useSelfViewDrawLayout({
 		isViewingHistory,
 		displayedCardsLength: displayedCards.length,
 		drawnCardsLength: drawnCards.length,
 		revealingIndex,
-		pendingDrawImageReady,
 		commitPendingDraw,
-		playFlip,
+		playCardDeal,
+		onRevealFlipComplete: handleRevealSequenceComplete,
 		spreadSlotCount,
 		spreadStyle,
 		spreadLayoutRows: spreadLayout.rows,
 	});
+
+	// Safety: if reveal chain stalls after commit, flip and unlock draw.
+	useEffect(() => {
+		if (isViewingHistory || revealingIndex === null) return;
+		if (revealingIndex >= drawnCards.length) return;
+
+		const revealTimeout = window.setTimeout(() => {
+			if (!flippedIndices.has(revealingIndex)) {
+				completeCardReveal(revealingIndex);
+			}
+		}, 400);
+
+		const unlockTimeout = window.setTimeout(() => {
+			handleRevealFlipComplete(revealingIndex);
+		}, CARD_FLIP_DURATION_MS + 800);
+
+		return () => {
+			window.clearTimeout(revealTimeout);
+			window.clearTimeout(unlockTimeout);
+		};
+	}, [
+		completeCardReveal,
+		drawnCards.length,
+		flippedIndices,
+		handleRevealFlipComplete,
+		isViewingHistory,
+		revealingIndex,
+	]);
 
 	const focusStateRef = useRef(focusState);
 
@@ -315,15 +389,25 @@ export function SelfViewDeckScreen() {
 				.filter(Boolean)
 				.join(" ");
 
+			const isRevealing =
+				!isViewingHistory &&
+				revealingIndex === index &&
+				flippedIndices.has(index) === false;
+
 			return (
 				<TarotCard
-					key={`${card.id}-${index}`}
+					key={`self-view-card-${index}`}
 					card={card}
 					index={index}
 					className={cardClassName || undefined}
+					flipMode="css-3d"
 					loadWhenVisible={isViewingHistory}
 					flipped={isFaceUp}
-					preloadFront={isFaceUp}
+					preloadFront={isFaceUp || isRevealing}
+					revealLoading={isRevealing}
+					sparkleOnReveal={isRevealing}
+					onRevealReady={completeCardReveal}
+					onRevealFlipComplete={handleRevealFlipComplete}
 					disableHoverPreview
 					uprightPreview={
 						reversedUprightHeld &&
@@ -337,13 +421,16 @@ export function SelfViewDeckScreen() {
 			);
 		},
 		[
+			completeCardReveal,
 			flippedIndices,
 			focusState,
 			handleCardPress,
+			handleRevealFlipComplete,
 			isViewingHistory,
 			isZoomActive,
 			registerCardRoot,
 			reversedUprightHeld,
+			revealingIndex,
 		],
 	);
 
@@ -352,7 +439,7 @@ export function SelfViewDeckScreen() {
 			if (item.kind === "placeholder") {
 				return (
 					<SelfViewCardSlot
-						key={`slot-${item.index}`}
+						key={`self-view-card-${item.index}`}
 						index={item.index}
 						onRootElement={registerCardRoot}
 					/>
@@ -364,7 +451,8 @@ export function SelfViewDeckScreen() {
 		[registerCardRoot, renderSpreadCard],
 	);
 
-	const hasSpread = spreadSlotCount > 0 || isViewingHistory;
+	const hasSpread =
+		spreadSlotCount > 0 || isViewingHistory || revealingIndex !== null;
 
 	return (
 		<>
@@ -392,6 +480,7 @@ export function SelfViewDeckScreen() {
 						<div
 							className="self-view-spread"
 							data-count={spreadSlotCount || undefined}
+							data-layout-flight={layoutFlight ? "true" : undefined}
 							data-layout-rows={
 								spreadLayout.rows > 0 ? spreadLayout.rows : undefined
 							}

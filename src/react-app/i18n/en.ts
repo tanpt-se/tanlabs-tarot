@@ -56,12 +56,11 @@ export const en: UiLabels = {
 	aboutLinkedInLabel: "LinkedIn",
 	aboutFacebookLabel: "Facebook",
 	aboutPhoneLabel: "Phone",
-	aboutWhatsNew: "What's new in 0.3",
+	aboutWhatsNew: "What's new in 0.4",
 	aboutUpdateNotes: [
-		"Self-view draw animation: smoother card shifts with stable sizing across grid changes.",
-		"Draw bar: History and Restart icon buttons flank Draw a card.",
-		"Self-view: up to 10 cards with multi-row layout and keyboard shortcuts (H, C, 1–0).",
-		"About screen with version info and release notes from the home menu.",
+		"Self-view: visible deck pile by the draw button; cards arc from the deck into the spread.",
+		"True 3D card flip on reveal after draw, with sparkle and synced sound.",
+		"Smoother layout shifts when adding cards; art preloads before the flip.",
 	],
 	selfViewMode: "I'm Tarot Reader",
 	selfViewModeDesc:

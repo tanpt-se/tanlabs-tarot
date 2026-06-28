@@ -47,6 +47,11 @@ export function playCardFlipSfx(): void {
 	window.setTimeout(() => playTone(780, 0.1, "sine", 0.05), 60);
 }
 
+export function playCardDealSfx(): void {
+	playTone(240, 0.08, "triangle", 0.05);
+	window.setTimeout(() => playTone(360, 0.1, "sine", 0.04), 40);
+}
+
 export function playShuffleSfx(): void {
 	for (let i = 0; i < 5; i++) {
 		window.setTimeout(() => {

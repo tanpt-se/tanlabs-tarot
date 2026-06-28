@@ -1,12 +1,23 @@
 import gsap from "gsap";
-import { didSelfViewLayoutResize } from "../self-view/spread-layout";
-import { GSAP_EASE_IN_OUT, GSAP_EASE_OUT } from "./constants";
+import {
+	computeSelfViewSpreadSlotRects,
+	didSelfViewLayoutResize,
+	getSelfViewSpreadLayout,
+	shouldUseSelfViewLayoutFlight,
+	slotRectToViewport,
+	type SelfViewSpreadSlotRect,
+} from "../self-view/spread-layout";
+import {
+	GSAP_EASE_IN_OUT,
+	GSAP_EASE_OUT,
+	SELF_VIEW_DRAW_SEQUENCE,
+} from "./constants";
 import { prefersReducedMotion } from "./reduced-motion";
 
 /** Draw sequence: resize (if grid band changes) → shift → reveal → settle. */
-const LAYOUT_RESIZE_DURATION_S = 0.28;
-const SHIFT_MOVE_DURATION_S = 0.5;
-const NEW_CARD_REVEAL_DURATION_S = 0.35;
+const LAYOUT_RESIZE_DURATION_S = SELF_VIEW_DRAW_SEQUENCE.layoutResize;
+const SHIFT_MOVE_DURATION_S = SELF_VIEW_DRAW_SEQUENCE.layoutShift;
+const NEW_CARD_REVEAL_DURATION_S = SELF_VIEW_DRAW_SEQUENCE.revealSettle;
 
 const POSITION_EPSILON_PX = 0.5;
 const SCALE_EPSILON = 0.02;
@@ -22,11 +33,24 @@ type ShiftPrep = {
 	scale: number;
 };
 
+export type SelfViewFlightShift = {
+	fromLeft: number;
+	fromTop: number;
+	fromWidth: number;
+	fromHeight: number;
+	toLeft: number;
+	toTop: number;
+	toWidth: number;
+	toHeight: number;
+};
+
 export type SelfViewPreparedSlotReservation = {
 	shiftedCards: Map<number, ShiftPrep>;
+	flightCards: Map<number, SelfViewFlightShift>;
 	slotIndex: number;
 	animatedElements: HTMLElement[];
 	layoutResized: boolean;
+	layoutFlight: boolean;
 };
 
 export type SelfViewSlotReservationHandle = {
@@ -49,6 +73,10 @@ function getMotionTarget(cardRoot: HTMLDivElement): HTMLElement {
 	return cardRoot;
 }
 
+function getSpreadRoot(cardRoot: HTMLDivElement): HTMLElement | null {
+	return cardRoot.closest<HTMLElement>(".self-view-spread");
+}
+
 function elementCenter(rect: DOMRect): ViewportPoint {
 	return {
 		x: rect.left + rect.width / 2,
@@ -67,13 +95,36 @@ function markLayoutAnimating(element: HTMLElement, animating: boolean): void {
 	}
 }
 
+function markLayoutFlight(element: HTMLElement, flying: boolean): void {
+	if (flying) {
+		element.setAttribute("data-self-view-flight", "true");
+	} else {
+		element.removeAttribute("data-self-view-flight");
+	}
+}
+
 function resetMotionTarget(element: HTMLElement): void {
 	gsap.killTweensOf(element);
 	markLayoutAnimating(element, false);
+	markLayoutFlight(element, false);
 	gsap.set(element, { x: 0, y: 0, scale: 1, opacity: 1 });
 }
 
+function releaseFlightTarget(element: HTMLElement): void {
+	gsap.killTweensOf(element);
+	markLayoutAnimating(element, false);
+	markLayoutFlight(element, false);
+	gsap.set(element, {
+		clearProps:
+			"position,left,top,width,height,margin,transform,x,y,scale,rotation",
+	});
+}
+
 function releaseCardMotion(element: HTMLElement): void {
+	if (element.hasAttribute("data-self-view-flight")) {
+		releaseFlightTarget(element);
+		return;
+	}
 	resetMotionTarget(element);
 }
 
@@ -89,27 +140,63 @@ function needsScaleShift(scale: number): boolean {
 	return Math.abs(scale - 1) >= SCALE_EPSILON;
 }
 
+function computeShiftPrepFromRects(
+	oldRect: DOMRect,
+	newRect: DOMRect,
+): ShiftPrep | null {
+	const oldCenter = elementCenter(oldRect);
+	const newCenter = elementCenter(newRect);
+	const dx = oldCenter.x - newCenter.x;
+	const dy = oldCenter.y - newCenter.y;
+	const scale = uniformScale(oldRect, newRect);
+
+	if (!needsPositionShift(dx, dy) && !needsScaleShift(scale)) {
+		return null;
+	}
+
+	return { dx, dy, scale };
+}
+
 function computeShiftPrep(
 	element: HTMLElement,
 	oldRect: DOMRect,
 ): ShiftPrep | null {
 	const current = element.getBoundingClientRect();
 	if (current.width <= 0 || current.height <= 0) return null;
+	return computeShiftPrepFromRects(oldRect, current);
+}
 
-	const oldCenter = elementCenter(oldRect);
-	const newCenter = elementCenter(current);
-	const dx = oldCenter.x - newCenter.x;
-	const dy = oldCenter.y - newCenter.y;
-	const scale = uniformScale(oldRect, current);
+function needsFlightShift(
+	oldRect: DOMRect,
+	targetSlot: SelfViewSpreadSlotRect,
+	spreadBounds: DOMRect,
+): boolean {
+	const targetRect = slotRectToViewport(targetSlot, spreadBounds);
+	return computeShiftPrepFromRects(oldRect, targetRect) !== null;
+}
 
-	if (
-		!needsPositionShift(dx, dy) &&
-		!needsScaleShift(scale)
-	) {
-		return null;
-	}
+function pinCardForFlight(
+	element: HTMLElement,
+	shift: SelfViewFlightShift,
+): void {
+	gsap.killTweensOf(element);
+	markLayoutAnimating(element, true);
+	markLayoutFlight(element, true);
 
-	return { dx, dy, scale };
+	gsap.set(element, {
+		position: "absolute",
+		left: shift.fromLeft,
+		top: shift.fromTop,
+		width: shift.fromWidth,
+		height: shift.fromHeight,
+		margin: 0,
+		x: 0,
+		y: 0,
+		scale: 1,
+		rotation: 0,
+		opacity: 1,
+		...tweenDefaults,
+	});
 }
 
 export function captureSelfViewCardRects(
@@ -158,50 +245,112 @@ export function prepareSelfViewSlotReservation(options: {
 
 	const { cardRoots, slotIndex, oldCardRects, previousCount, nextCount } =
 		options;
-	if (!cardRoots.has(slotIndex)) return null;
+	const slotRoot = cardRoots.get(slotIndex);
+	if (!slotRoot) return null;
+
+	const spread = getSpreadRoot(slotRoot);
+	if (!spread) return null;
 
 	const layoutResized = didSelfViewLayoutResize(previousCount, nextCount);
+	const layoutFlight = shouldUseSelfViewLayoutFlight(
+		previousCount,
+		nextCount,
+		slotIndex,
+	);
 	const shiftedCards = new Map<number, ShiftPrep>();
+	const flightCards = new Map<number, SelfViewFlightShift>();
 	const animatedElements: HTMLElement[] = [];
 
-	for (let index = 0; index < slotIndex; index += 1) {
-		const root = cardRoots.get(index);
-		const oldRect = oldCardRects.get(index);
-		if (!root || !oldRect) continue;
-
-		const element = getMotionTarget(root);
-		const delta = computeShiftPrep(element, oldRect);
-		if (!delta) {
-			resetMotionTarget(element);
-			continue;
-		}
-
-		const shouldAnimate =
-			needsPositionShift(delta.dx, delta.dy) ||
-			needsScaleShift(delta.scale);
-
-		if (!shouldAnimate) {
-			resetMotionTarget(element);
-			continue;
-		}
-
-		shiftedCards.set(index, delta);
-		animatedElements.push(element);
-		gsap.killTweensOf(element);
-		markLayoutAnimating(element, true);
-
-		const startScale = needsScaleShift(delta.scale) ? delta.scale : 1;
-
-		gsap.set(element, {
-			...tweenDefaults,
-			opacity: 1,
-			x: delta.dx,
-			y: delta.dy,
-			scale: startScale,
+	if (layoutFlight) {
+		const spreadBounds = spread.getBoundingClientRect();
+		const measuredWidthPx = measureSelfViewSlotCardWidthPx(
+			cardRoots,
+			slotIndex,
+		);
+		const baseLayout = getSelfViewSpreadLayout(nextCount);
+		const cardWidthPx = measuredWidthPx ?? baseLayout.cardWidthPx;
+		const targetSlots = computeSelfViewSpreadSlotRects(nextCount, {
+			layout: {
+				...baseLayout,
+				cardWidthPx,
+				spreadWidthPx: spreadBounds.width,
+			},
 		});
+
+		for (let index = 0; index < slotIndex; index += 1) {
+			const root = cardRoots.get(index);
+			const oldRect = oldCardRects.get(index);
+			const targetSlot = targetSlots.get(index);
+			if (!root || !oldRect || !targetSlot) continue;
+
+			if (!needsFlightShift(oldRect, targetSlot, spreadBounds)) {
+				resetMotionTarget(getMotionTarget(root));
+				continue;
+			}
+
+			const element = getMotionTarget(root);
+			const shift: SelfViewFlightShift = {
+				fromLeft: oldRect.left - spreadBounds.left,
+				fromTop: oldRect.top - spreadBounds.top,
+				fromWidth: oldRect.width,
+				fromHeight: oldRect.height,
+				toLeft: targetSlot.left,
+				toTop: targetSlot.top,
+				toWidth: targetSlot.width,
+				toHeight: targetSlot.height,
+			};
+
+			flightCards.set(index, shift);
+			animatedElements.push(element);
+			pinCardForFlight(element, shift);
+		}
+	} else {
+		for (let index = 0; index < slotIndex; index += 1) {
+			const root = cardRoots.get(index);
+			const oldRect = oldCardRects.get(index);
+			if (!root || !oldRect) continue;
+
+			const element = getMotionTarget(root);
+			const delta = computeShiftPrep(element, oldRect);
+			if (!delta) {
+				resetMotionTarget(element);
+				continue;
+			}
+
+			const shouldAnimate =
+				needsPositionShift(delta.dx, delta.dy) ||
+				needsScaleShift(delta.scale);
+
+			if (!shouldAnimate) {
+				resetMotionTarget(element);
+				continue;
+			}
+
+			shiftedCards.set(index, delta);
+			animatedElements.push(element);
+			gsap.killTweensOf(element);
+			markLayoutAnimating(element, true);
+
+			const startScale = needsScaleShift(delta.scale) ? delta.scale : 1;
+
+			gsap.set(element, {
+				...tweenDefaults,
+				opacity: 1,
+				x: delta.dx,
+				y: delta.dy,
+				scale: startScale,
+			});
+		}
 	}
 
-	return { shiftedCards, slotIndex, animatedElements, layoutResized };
+	return {
+		shiftedCards,
+		flightCards,
+		slotIndex,
+		animatedElements,
+		layoutResized,
+		layoutFlight,
+	};
 }
 
 export function playSelfViewSlotReservation(
@@ -217,7 +366,8 @@ export function playSelfViewSlotReservation(
 	}
 
 	const { cardRoots, onComplete } = options;
-	const { shiftedCards, slotIndex, layoutResized } = prepared;
+	const { shiftedCards, flightCards, slotIndex, layoutResized, layoutFlight } =
+		prepared;
 
 	const finish = () => {
 		requestAnimationFrame(() => {
@@ -225,12 +375,45 @@ export function playSelfViewSlotReservation(
 		});
 	};
 
-	if (shiftedCards.size === 0) {
-		finish();
+	const hasMotion = layoutFlight
+		? flightCards.size > 0
+		: shiftedCards.size > 0;
+
+	if (!hasMotion) {
+		onComplete?.();
 		return { timeline: gsap.timeline(), slotIndex };
 	}
 
 	const tl = gsap.timeline({ onComplete: finish });
+
+	if (layoutFlight) {
+		const duration =
+			layoutResized
+				? LAYOUT_RESIZE_DURATION_S + SHIFT_MOVE_DURATION_S
+				: SHIFT_MOVE_DURATION_S;
+
+		flightCards.forEach((shift, index) => {
+			const root = cardRoots.get(index);
+			if (!root) return;
+
+			const element = getMotionTarget(root);
+			tl.to(
+				element,
+				{
+					left: shift.toLeft,
+					top: shift.toTop,
+					width: shift.toWidth,
+					height: shift.toHeight,
+					duration,
+					ease: GSAP_EASE_IN_OUT,
+					overwrite: "auto",
+				},
+				0,
+			);
+		});
+
+		return { timeline: tl, slotIndex };
+	}
 
 	shiftedCards.forEach((delta, index) => {
 		const root = cardRoots.get(index);
@@ -243,7 +426,23 @@ export function playSelfViewSlotReservation(
 		const needsScaleSnap =
 			!layoutResized && needsScaleShift(delta.scale);
 
-		// Step 1 — shrink to new grid size (all cards together, position held).
+		if (layoutResized && (needsResize || needsMove || needsScaleSnap)) {
+			tl.to(
+				element,
+				{
+					x: 0,
+					y: 0,
+					scale: 1,
+					duration: LAYOUT_RESIZE_DURATION_S + SHIFT_MOVE_DURATION_S,
+					ease: GSAP_EASE_IN_OUT,
+					overwrite: "auto",
+					...tweenDefaults,
+				},
+				0,
+			);
+			return;
+		}
+
 		if (needsResize) {
 			tl.to(
 				element,
@@ -258,7 +457,6 @@ export function playSelfViewSlotReservation(
 			);
 		}
 
-		// Step 2 — move into slot (all cards together, scale locked at 1).
 		if (needsMove || needsScaleSnap) {
 			tl.to(
 				element,
@@ -286,7 +484,7 @@ export function killSelfViewSlotReservation(
 	if (!handle) return;
 	handle.timeline.kill();
 	for (const element of animatedElements) {
-		resetMotionTarget(element);
+		releaseCardMotion(element);
 	}
 }
 

@@ -128,6 +128,7 @@ export const SelfViewCardFocusOverlay = forwardRef<
 					card={card}
 					index={index}
 					flipped={flipped}
+					flipMode="css-3d"
 					loadWhenVisible
 					disableHoverPreview
 					uprightPreview={reversedUprightHeld && flipped && card.reversed}

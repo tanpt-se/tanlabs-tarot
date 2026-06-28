@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes, ReactNode } from "react";
+import type { ButtonHTMLAttributes, ReactNode, Ref } from "react";
 
 type GameButtonTone = "light" | "wood";
 
@@ -12,6 +12,7 @@ export interface GameButtonProps
 	code?: string;
 	sublabel?: string;
 	fullWidth?: boolean;
+	buttonRef?: Ref<HTMLButtonElement>;
 }
 
 export function GameButton({
@@ -23,6 +24,7 @@ export function GameButton({
 	fullWidth = false,
 	className = "",
 	type = "button",
+	buttonRef,
 	...props
 }: GameButtonProps) {
 	const stackLayout = layout === "stack" || Boolean(code || sublabel);
@@ -39,7 +41,7 @@ export function GameButton({
 		.join(" ");
 
 	return (
-		<button type={type} className={classes} {...props}>
+		<button ref={buttonRef} type={type} className={classes} {...props}>
 			<span className="game-button__shine" aria-hidden />
 			<span className="game-button__frame">
 				{stackLayout ? (

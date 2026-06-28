@@ -7,6 +7,7 @@ import {
 } from "react";
 import {
 	playCardFlipSfx,
+	playCardDealSfx,
 	playRevealSfx,
 	playShuffleSfx,
 	setSfxVolumeMultiplier,
@@ -89,6 +90,10 @@ export function SfxProvider({ children }: { children: ReactNode }) {
 		if (enabled) playRevealSfx();
 	}, [enabled]);
 
+	const playCardDeal = useCallback(() => {
+		if (enabled) playCardDealSfx();
+	}, [enabled]);
+
 	const value = useMemo(
 		() => ({
 			enabled,
@@ -101,6 +106,7 @@ export function SfxProvider({ children }: { children: ReactNode }) {
 			playFlip,
 			playShuffle,
 			playReveal,
+			playCardDeal,
 		}),
 		[
 			enabled,
@@ -113,6 +119,7 @@ export function SfxProvider({ children }: { children: ReactNode }) {
 			playFlip,
 			playShuffle,
 			playReveal,
+			playCardDeal,
 		],
 	);
 

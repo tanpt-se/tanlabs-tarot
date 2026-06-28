@@ -155,15 +155,25 @@ export function SelfViewSessionProvider({ children }: { children: ReactNode }) {
 		if (!card || index === null) return;
 
 		setDrawnCards((current) => [...current, card]);
+		pendingDrawCardRef.current = null;
+	}, []);
+
+	const revealCard = useCallback((index: number) => {
+		if (revealingIndexRef.current !== index) return;
+
 		setFlippedIndices((current) => {
 			const next = new Set(current);
 			next.add(index);
 			return next;
 		});
-		pendingDrawCardRef.current = null;
-		setPendingDrawImageReady(false);
-		clearRevealLock(index);
-	}, [clearRevealLock]);
+	}, []);
+
+	const completeRevealFlip = useCallback(
+		(index: number) => {
+			clearRevealLock(index);
+		},
+		[clearRevealLock],
+	);
 
 	const toggleCardFlip = useCallback(
 		(index: number) => {
@@ -193,6 +203,8 @@ export function SelfViewSessionProvider({ children }: { children: ReactNode }) {
 			shuffleDeck,
 			drawOne,
 			commitPendingDraw,
+			revealCard,
+			completeRevealFlip,
 			toggleCardFlip,
 			backToCurrent,
 			resetLiveSpread,
@@ -214,6 +226,8 @@ export function SelfViewSessionProvider({ children }: { children: ReactNode }) {
 			shuffleDeck,
 			drawOne,
 			commitPendingDraw,
+			revealCard,
+			completeRevealFlip,
 			toggleCardFlip,
 			backToCurrent,
 			resetLiveSpread,

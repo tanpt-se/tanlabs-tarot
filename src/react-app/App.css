@@ -9,7 +9,7 @@
 	background: #0a0810;
 }
 
-.app-shell > :not(.home-pov-backdrop) {
+.app-shell> :not(.home-pov-backdrop) {
 	position: relative;
 	z-index: 1;
 }
@@ -150,10 +150,8 @@
 
 .help-modal {
 	width: min(22rem, calc(100vw - 2 * var(--frame-side)));
-	max-height: min(
-		var(--game-modal-height),
-		calc(100vh - var(--frame-top) - var(--frame-bottom) - 2rem)
-	);
+	max-height: min(var(--game-modal-height),
+			calc(100vh - var(--frame-top) - var(--frame-bottom) - 2rem));
 }
 
 .help-modal .game-panel__surface {
@@ -258,10 +256,8 @@
 
 .about-modal {
 	width: min(36rem, calc(100vw - 2 * var(--frame-side)));
-	max-height: min(
-		var(--game-modal-height),
-		calc(100vh - var(--frame-top) - var(--frame-bottom) - 2rem)
-	);
+	max-height: min(var(--game-modal-height),
+			calc(100vh - var(--frame-top) - var(--frame-bottom) - 2rem));
 }
 
 .about-modal .game-panel__surface {
@@ -396,14 +392,10 @@
 
 .shop-modal.game-panel {
 	width: min(50vw, calc(100vw - 2 * var(--frame-side)));
-	height: min(
-		50vh,
-		calc(100vh - var(--frame-top) - var(--frame-bottom) - 2rem)
-	);
-	max-height: min(
-		50vh,
-		calc(100vh - var(--frame-top) - var(--frame-bottom) - 2rem)
-	);
+	height: min(50vh,
+			calc(100vh - var(--frame-top) - var(--frame-bottom) - 2rem));
+	max-height: min(50vh,
+			calc(100vh - var(--frame-top) - var(--frame-bottom) - 2rem));
 }
 
 .shop-modal .game-panel__surface {
@@ -652,7 +644,7 @@
 		filter 0.12s ease;
 }
 
-.locale-switcher__button + .locale-switcher__button {
+.locale-switcher__button+.locale-switcher__button {
 	border-left: 2px solid color-mix(in srgb, var(--game-btn-border) 55%, transparent);
 }
 
@@ -1063,6 +1055,7 @@
 		opacity: 0;
 		transform: translateY(0.65rem);
 	}
+
 	to {
 		opacity: 1;
 		transform: translateY(0);
@@ -1086,20 +1079,16 @@
 	display: flex;
 	flex-direction: column;
 	width: min(var(--game-modal-width), 100%);
-	max-height: min(
-		var(--game-modal-height),
-		calc(100vh - var(--frame-top) - var(--frame-bottom) - 2rem)
-	);
+	max-height: min(var(--game-modal-height),
+			calc(100vh - var(--frame-top) - var(--frame-bottom) - 2rem));
 	overflow: visible;
 	outline: none;
 }
 
 .settings-modal.game-panel {
 	width: min(24rem, 100%);
-	max-height: min(
-		var(--game-modal-height),
-		calc(100vh - var(--frame-top) - var(--frame-bottom) - 1rem)
-	);
+	max-height: min(var(--game-modal-height),
+			calc(100vh - var(--frame-top) - var(--frame-bottom) - 1rem));
 }
 
 .confirm-modal__panel.game-panel {
@@ -1204,7 +1193,7 @@
 	font-size: var(--game-modal-muted-size);
 }
 
-.settings-modal .settings-row__control > .game-button--icon {
+.settings-modal .settings-row__control>.game-button--icon {
 	width: 3rem;
 	min-width: 3rem;
 	height: 3rem;
@@ -1212,7 +1201,7 @@
 	max-height: 3rem;
 }
 
-.settings-modal .settings-row__control > .game-button--icon .game-button__frame {
+.settings-modal .settings-row__control>.game-button--icon .game-button__frame {
 	width: 100%;
 	min-height: 3rem;
 	height: 3rem;
@@ -1583,30 +1572,81 @@
 }
 
 @keyframes shuffle-riffle-1 {
-	0%   { transform: rotate(-10deg) translateX(0.6rem); }
-	20%  { transform: rotate(-22deg) translateX(-1.2rem) translateY(-0.2rem); }
-	45%  { transform: rotate(-4deg) translateX(-0.1rem) translateY(-0.5rem); }
-	70%  { transform: rotate(6deg) translateX(0.7rem) translateY(-0.15rem); }
-	90%  { transform: rotate(-2deg) translateX(0.2rem) translateY(-0.05rem); }
-	100% { transform: rotate(-10deg) translateX(0.6rem); }
+	0% {
+		transform: rotate(-10deg) translateX(0.6rem);
+	}
+
+	20% {
+		transform: rotate(-22deg) translateX(-1.2rem) translateY(-0.2rem);
+	}
+
+	45% {
+		transform: rotate(-4deg) translateX(-0.1rem) translateY(-0.5rem);
+	}
+
+	70% {
+		transform: rotate(6deg) translateX(0.7rem) translateY(-0.15rem);
+	}
+
+	90% {
+		transform: rotate(-2deg) translateX(0.2rem) translateY(-0.05rem);
+	}
+
+	100% {
+		transform: rotate(-10deg) translateX(0.6rem);
+	}
 }
 
 @keyframes shuffle-riffle-2 {
-	0%   { transform: rotate(2deg); }
-	22%  { transform: rotate(10deg) translateY(-0.6rem) translateX(0.1rem); }
-	48%  { transform: rotate(-8deg) translateX(-0.7rem) translateY(-0.3rem); }
-	74%  { transform: rotate(5deg) translateX(0.5rem) translateY(-0.35rem); }
-	92%  { transform: rotate(0deg) translateY(-0.05rem); }
-	100% { transform: rotate(2deg); }
+	0% {
+		transform: rotate(2deg);
+	}
+
+	22% {
+		transform: rotate(10deg) translateY(-0.6rem) translateX(0.1rem);
+	}
+
+	48% {
+		transform: rotate(-8deg) translateX(-0.7rem) translateY(-0.3rem);
+	}
+
+	74% {
+		transform: rotate(5deg) translateX(0.5rem) translateY(-0.35rem);
+	}
+
+	92% {
+		transform: rotate(0deg) translateY(-0.05rem);
+	}
+
+	100% {
+		transform: rotate(2deg);
+	}
 }
 
 @keyframes shuffle-riffle-3 {
-	0%   { transform: rotate(12deg) translateX(-0.6rem); }
-	18%  { transform: rotate(20deg) translateX(1.1rem) translateY(-0.15rem); }
-	42%  { transform: rotate(-3deg) translateX(0.2rem) translateY(-0.45rem); }
-	66%  { transform: rotate(-14deg) translateX(-0.9rem) translateY(-0.2rem); }
-	85%  { transform: rotate(5deg) translateX(-0.2rem) translateY(-0.05rem); }
-	100% { transform: rotate(12deg) translateX(-0.6rem); }
+	0% {
+		transform: rotate(12deg) translateX(-0.6rem);
+	}
+
+	18% {
+		transform: rotate(20deg) translateX(1.1rem) translateY(-0.15rem);
+	}
+
+	42% {
+		transform: rotate(-3deg) translateX(0.2rem) translateY(-0.45rem);
+	}
+
+	66% {
+		transform: rotate(-14deg) translateX(-0.9rem) translateY(-0.2rem);
+	}
+
+	85% {
+		transform: rotate(5deg) translateX(-0.2rem) translateY(-0.05rem);
+	}
+
+	100% {
+		transform: rotate(12deg) translateX(-0.6rem);
+	}
 }
 
 .spread-shuffle--active .card-back--spread {
@@ -1614,10 +1654,12 @@
 }
 
 @keyframes shuffle-pulse {
+
 	0%,
 	100% {
 		transform: rotate(-3deg) scale(1);
 	}
+
 	50% {
 		transform: rotate(3deg) scale(1.04);
 	}
@@ -1758,10 +1800,12 @@
 		opacity: 0;
 		transform: translateY(1.5rem) scale(0.85);
 	}
+
 	60% {
 		opacity: 1;
 		transform: translateY(-0.15rem) scale(1.02);
 	}
+
 	100% {
 		opacity: 1;
 		transform: translateY(0) scale(1);
@@ -1843,6 +1887,7 @@
 }
 
 @media (hover: hover) {
+
 	.tarot-card__flip:not(:disabled):is(:hover, :active) .tarot-card__inner,
 	.tarot-card__inner--animating {
 		will-change: transform;
@@ -2033,10 +2078,12 @@
 }
 
 @keyframes tarot-card-back-pulse {
+
 	0%,
 	100% {
 		filter: brightness(1);
 	}
+
 	50% {
 		filter: brightness(1.07);
 	}
@@ -2117,16 +2164,12 @@
 /* Self-view — spread area + bottom actions */
 .self-view-screen {
 	--self-view-spread-gap: 0.42rem;
-	--self-view-card-max-base: 8.25rem;
 	--self-view-card-anim-pad-block: 0.7rem;
-	--self-view-spread-layout-fudge: 1.1rem;
-	--self-view-row-width: 4;
 	--self-view-layout-rows: 2;
-	--self-view-card-scale: 1;
+	--self-view-safe-pad-bottom: 2.25rem;
+	--self-view-spread-max-width: 100%;
 	--self-view-draw-reserve: calc(var(--game-menu-item-min-height) + 0.85rem);
-	--self-view-spread-available-h: calc(
-		100dvh - var(--frame-top) - var(--frame-bottom) - var(--button-height) - 0.35rem - var(--self-view-draw-reserve) - 0.5rem
-	);
+	--self-view-spread-available-h: calc(100dvh - var(--frame-top) - var(--frame-bottom) - var(--button-height) - 0.35rem - var(--self-view-draw-reserve) - 0.5rem);
 	display: flex;
 	flex-direction: column;
 	align-items: center;
@@ -2157,6 +2200,7 @@
 .self-view-screen[data-has-spread="true"] {
 	padding-bottom: var(--self-view-draw-reserve);
 	box-sizing: border-box;
+	overflow: hidden;
 }
 
 .self-view-draw-float {
@@ -2174,7 +2218,7 @@
 	--self-view-draw-bar-height: var(--game-menu-item-min-height);
 }
 
-.self-view-draw-float > .game-button {
+.self-view-draw-float>.game-button {
 	height: var(--self-view-draw-bar-height);
 	min-height: var(--self-view-draw-bar-height);
 	max-height: var(--self-view-draw-bar-height);
@@ -2207,6 +2251,98 @@
 	min-width: var(--self-view-draw-bar-height);
 }
 
+.self-view-deck-pile {
+	position: relative;
+	flex: 0 0 auto;
+	width: calc(var(--self-view-draw-bar-height) * 0.62);
+	min-width: calc(var(--self-view-draw-bar-height) * 0.62);
+	height: var(--self-view-draw-bar-height);
+	pointer-events: none;
+	margin-inline-end: -0.1rem;
+}
+
+.self-view-deck-pile__stack {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.self-view-deck-pile__layer {
+	position: absolute;
+	width: calc(var(--self-view-draw-bar-height) * 0.52);
+	aspect-ratio: 2 / 3.4;
+	border-radius: 0.2rem;
+	overflow: hidden;
+	box-shadow: 1px 2px 0 color-mix(in srgb, var(--foreground) 12%, transparent);
+}
+
+.self-view-deck-pile__layer--0 {
+	transform: rotate(-7deg) translate(-0.12rem, 0.06rem);
+	z-index: 1;
+}
+
+.self-view-deck-pile__layer--1 {
+	transform: rotate(3deg) translate(0.08rem, -0.04rem);
+	z-index: 2;
+}
+
+.self-view-deck-pile__layer--2 {
+	transform: rotate(9deg) translate(0.18rem, 0.02rem);
+	z-index: 3;
+}
+
+.self-view-deck-pile[data-has-cards="true"] .self-view-deck-pile__stack {
+	animation: self-view-deck-bob 2.4s ease-in-out infinite;
+}
+
+@keyframes self-view-deck-bob {
+
+	0%,
+	100% {
+		transform: translateY(0);
+	}
+
+	50% {
+		transform: translateY(-0.08rem);
+	}
+}
+
+.self-view-deck-pile__count {
+	position: absolute;
+	right: -0.1rem;
+	bottom: 0.15rem;
+	z-index: 4;
+	min-width: 1.1rem;
+	padding: 0.05rem 0.28rem;
+	border-radius: 999px;
+	font-size: 0.62rem;
+	font-weight: 700;
+	line-height: 1.2;
+	text-align: center;
+	color: var(--card);
+	background: color-mix(in srgb, var(--foreground) 88%, transparent);
+	box-shadow: 0 1px 0 color-mix(in srgb, var(--foreground) 20%, transparent);
+}
+
+.self-view-deal-ghost {
+	overflow: visible;
+}
+
+.self-view-deal-ghost__card {
+	width: 100%;
+	height: 100%;
+	border-radius: 0.25rem;
+	overflow: hidden;
+	box-shadow: 0 0.35rem 1rem color-mix(in srgb, var(--foreground) 18%, transparent);
+}
+
+.self-view-deal-ghost__card .card-back--spread {
+	width: 100%;
+	height: 100%;
+}
+
 .self-view-bottom-action {
 	flex: 1;
 	min-width: 0;
@@ -2232,21 +2368,17 @@
 	min-height: 0;
 	min-width: 0;
 	width: 100%;
+	max-width: var(--self-view-spread-max-width, 100%);
+	margin-inline: auto;
 	container-type: size;
 	container-name: self-view-spread;
-	max-width: min(
-		calc(
-			var(--self-view-sizing-row-width, var(--self-view-row-width)) * var(--self-view-card-max-base) * var(--self-view-card-scale) +
-				(var(--self-view-sizing-row-width, var(--self-view-row-width)) - 1) * var(--self-view-spread-gap) + 0.75rem
-		),
-		100%
-	);
 	overflow: hidden;
 	padding: 0.15rem 0;
 }
 
 .self-view-spread-wrap[data-layout-animating="true"] {
 	overflow: visible;
+	min-height: var(--self-view-spread-measured-h, auto);
 }
 
 .self-view-screen[data-layout-animating="true"] {
@@ -2292,6 +2424,23 @@
 
 .self-view-card-focus-layer__card .tarot-card__flip {
 	cursor: pointer;
+}
+
+.self-view-card-focus-layer .tarot-card[data-flip-mode="3d"] .tarot-card__inner,
+.self-view-card-focus-layer .tarot-card[data-flip-mode="3d"] .tarot-card__deal {
+	transition: none !important;
+}
+
+.self-view-card-focus-layer .tarot-card[data-flip-mode="3d"] .tarot-card__flip:not(:disabled):hover .tarot-card__inner,
+.self-view-card-focus-layer .tarot-card[data-flip-mode="3d"] .tarot-card__flip:not(:disabled):active .tarot-card__inner {
+	transform: rotateY(0deg) !important;
+	box-shadow: none !important;
+}
+
+.self-view-card-focus-layer .tarot-card[data-flip-mode="3d"] .tarot-card__flip[data-flipped="true"]:not(:disabled):hover .tarot-card__inner,
+.self-view-card-focus-layer .tarot-card[data-flip-mode="3d"] .tarot-card__flip[data-flipped="true"]:not(:disabled):active .tarot-card__inner {
+	transform: rotateY(180deg) !important;
+	box-shadow: none !important;
 }
 
 /* Zoomed card — no hover/active scale (beats global gsap-flip rules). */
@@ -2342,66 +2491,20 @@
 	display: flex;
 	flex-direction: column;
 	align-items: center;
-	justify-content: center;
-	gap: var(--self-view-spread-gap);
-	width: auto;
+	justify-content: space-evenly;
+	gap: 0;
+	width: 100%;
 	max-width: 100%;
+	height: var(--self-view-spread-measured-h, min(100cqh, var(--self-view-spread-available-h)));
 	margin-block: auto;
 	margin-inline: auto;
-	padding: 0.2rem 0.05rem;
+	padding-block: var(--self-view-safe-pad-block, 0) var(--self-view-safe-pad-bottom, 2.25rem);
+	padding-inline: 0.05rem;
 	overflow: visible;
 	flex: none;
 	min-height: 0;
 	min-width: 0;
-	--self-view-card-max: calc(
-		var(--self-view-card-max-base) * var(--self-view-card-scale, 1)
-	);
-	--self-view-card-width: min(
-		var(--self-view-card-max),
-		calc(
-			(
-					var(--self-view-spread-measured-h, min(100cqh, var(--self-view-spread-available-h))) -
-					var(--self-view-spread-layout-fudge, 1.1rem) -
-					(var(--self-view-layout-rows) - 1) * var(--self-view-spread-gap) -
-					var(--self-view-layout-rows) * var(--self-view-card-anim-pad-block, 0.7rem)
-				) / var(--self-view-layout-rows) / var(--self-view-card-height-aspect, 1.72)
-		),
-		calc(
-			(100cqw - (var(--self-view-sizing-row-width, var(--self-view-row-width)) - 1) * var(--self-view-spread-gap)) /
-				var(--self-view-sizing-row-width, var(--self-view-row-width))
-		)
-	);
 	--spread-card-width: var(--self-view-card-width);
-}
-
-.self-view-spread[data-layout-rows="1"] {
-	--self-view-card-height-aspect: 1.58;
-}
-
-.self-view-spread[data-count="2"],
-.self-view-spread[data-count="3"],
-.self-view-spread[data-count="4"] {
-	--self-view-spread-gap: 0.36rem;
-}
-
-.self-view-spread[data-layout-rows="2"] {
-	--self-view-card-height-aspect: 1.72;
-	--self-view-card-max: 100rem;
-}
-
-.self-view-spread[data-count="5"],
-.self-view-spread[data-count="6"] {
-	--self-view-spread-gap: 0.32rem;
-}
-
-.self-view-spread[data-count="7"],
-.self-view-spread[data-count="8"] {
-	--self-view-spread-gap: 0.3rem;
-}
-
-.self-view-spread[data-count="9"],
-.self-view-spread[data-count="10"] {
-	--self-view-spread-gap: 0.28rem;
 }
 
 .self-view-spread__row {
@@ -2432,6 +2535,19 @@
 	opacity: 1;
 	pointer-events: auto;
 	transition: none !important;
+}
+
+.self-view-spread[data-layout-flight="true"] {
+	position: relative;
+}
+
+.self-view-spread[data-layout-flight="true"] .tarot-card[data-self-view-flight="true"] {
+	position: absolute;
+	margin: 0;
+	z-index: 4;
+	transition: none;
+	will-change: left, top, width, height;
+	pointer-events: none;
 }
 
 .self-view-spread .tarot-card[data-self-view-layout-anim="true"] {
@@ -2465,6 +2581,20 @@
 .self-view-spread .tarot-card__deal {
 	animation: none;
 	opacity: 1;
+	perspective: 900px;
+}
+
+.self-view-spread .tarot-card[data-flip-mode="3d"] .tarot-card__inner {
+	transition: box-shadow 0.2s ease;
+}
+
+.self-view-spread .tarot-card[data-flip-mode="3d"] .tarot-card__inner--animating {
+	transition: none;
+}
+
+/* GSAP owns inner transform for 3D — do not zero it via CSS. */
+.self-view-spread .tarot-card[data-flip-mode="3d"] .tarot-card__flip[data-flipped="true"] .tarot-card__inner {
+	transform: rotateY(180deg);
 }
 
 .self-view-spread .tarot-card__flip,
@@ -2472,14 +2602,39 @@
 	width: 100%;
 }
 
+.self-view-spread .tarot-card[data-flip-mode="3d"] .tarot-card__flip {
+	transform-origin: center center;
+	transition: transform 0.12s ease;
+}
+
 @media (hover: hover) {
-	.self-view-spread .tarot-card[data-gsap-flip="true"] .tarot-card__flip:not(:disabled):hover .tarot-card__inner,
-	.self-view-spread .tarot-card[data-gsap-flip="true"] .tarot-card__flip[data-flipped="true"]:not(:disabled):hover .tarot-card__inner,
-	.self-view-spread .tarot-card[data-gsap-flip="true"] .tarot-card__flip:not(:disabled):active .tarot-card__inner,
-	.self-view-spread .tarot-card[data-gsap-flip="true"] .tarot-card__flip[data-flipped="true"]:not(:disabled):active .tarot-card__inner {
-		transform: none !important;
-		box-shadow: none;
+
+	/* Lift the whole card — never override inner GSAP rotateY (fixes back face on hover). */
+	.self-view-spread .tarot-card[data-flip-mode="3d"] .tarot-card__flip:not(:disabled):hover {
+		transform: scale(1.04);
 	}
+
+	.self-view-spread .tarot-card[data-flip-mode="3d"] .tarot-card__flip:not(:disabled):active {
+		transform: scale(0.96);
+	}
+
+	.self-view-spread .tarot-card[data-flip-mode="3d"] .tarot-card__flip:not(:disabled):hover .tarot-card__inner {
+		transform: rotateY(0deg);
+		box-shadow: 0 0.35rem 1rem color-mix(in srgb, var(--palette-gold) 22%, transparent);
+	}
+
+	.self-view-spread .tarot-card[data-flip-mode="3d"] .tarot-card__flip[data-flipped="true"]:not(:disabled):hover .tarot-card__inner {
+		transform: rotateY(180deg);
+		box-shadow: 0 0.35rem 1rem color-mix(in srgb, var(--palette-gold) 22%, transparent);
+	}
+}
+
+.self-view-spread .tarot-card[data-flip-mode="3d"] .tarot-card__flip:not(:disabled):active .tarot-card__inner {
+	transform: rotateY(0deg);
+}
+
+.self-view-spread .tarot-card[data-flip-mode="3d"] .tarot-card__flip[data-flipped="true"]:not(:disabled):active .tarot-card__inner {
+	transform: rotateY(180deg);
 }
 
 .self-view-spread .tarot-card[data-gsap-flip="true"] .tarot-card__deal {
@@ -2628,6 +2783,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+
 	.self-view-history-drawer,
 	.self-view-history-drawer__panel {
 		animation: none;
@@ -2682,9 +2838,14 @@
 	white-space: normal;
 }
 
+@media (orientation: landscape) and (min-width: 641px) {
+	.self-view-screen {
+		--self-view-spread-max-width: 60vw;
+	}
+}
+
 @media (max-width: 640px) {
 	.self-view-screen {
-		--self-view-card-max-base: 7rem;
 		--self-view-spread-gap: 0.34rem;
 	}
 
@@ -2696,12 +2857,6 @@
 		width: min(calc(100% - 1.5rem), 24rem);
 		bottom: calc(var(--frame-bottom) + 0.75rem);
 		gap: 0.35rem;
-	}
-}
-
-@media (min-width: 900px) {
-	.self-view-screen {
-		--self-view-card-max-base: 8.75rem;
 	}
 }
 
@@ -2916,13 +3071,11 @@
 .home-pov-backdrop__grade {
 	position: absolute;
 	inset: 0;
-	background: linear-gradient(
-		180deg,
-		color-mix(in srgb, #120818 8%, transparent) 0%,
-		transparent 14%,
-		transparent 68%,
-		color-mix(in srgb, #000000 26%, transparent) 100%
-	);
+	background: linear-gradient(180deg,
+			color-mix(in srgb, #120818 8%, transparent) 0%,
+			transparent 14%,
+			transparent 68%,
+			color-mix(in srgb, #000000 26%, transparent) 100%);
 	mix-blend-mode: multiply;
 }
 
@@ -2945,33 +3098,28 @@
 .home-pov-backdrop__vignette {
 	position: absolute;
 	inset: 0;
-	background: radial-gradient(
-		ellipse 84% 74% at 50% 41%,
-		transparent 36%,
-		color-mix(in srgb, #000000 46%, transparent) 100%
-	);
+	background: radial-gradient(ellipse 84% 74% at 50% 41%,
+			transparent 36%,
+			color-mix(in srgb, #000000 46%, transparent) 100%);
 }
 
 .home-pov-backdrop__candle-warm {
 	position: absolute;
 	inset: 0;
 	background:
-		radial-gradient(
-			ellipse 46% 36% at 82% 30%,
+		radial-gradient(ellipse 46% 36% at 82% 30%,
 			color-mix(in srgb, #e8b86d 14%, transparent) 0%,
-			transparent 60%
-		),
-		radial-gradient(
-			ellipse 40% 34% at 14% 28%,
+			transparent 60%),
+		radial-gradient(ellipse 40% 34% at 14% 28%,
 			color-mix(in srgb, #8b6fd4 8%, transparent) 0%,
-			transparent 55%
-		);
+			transparent 55%);
 	mix-blend-mode: screen;
 	opacity: 0.65;
 	animation: pov-candle-flicker 6s ease-in-out infinite;
 }
 
 @keyframes pov-candle-flicker {
+
 	0%,
 	100% {
 		opacity: 0.65;
@@ -3004,7 +3152,7 @@
 	pointer-events: none;
 }
 
-.home-pov-scene__playfield > * {
+.home-pov-scene__playfield>* {
 	pointer-events: auto;
 }
 
@@ -3295,7 +3443,7 @@
 	object-fit: cover;
 }
 
-.reading-panel__section + .reading-panel__section {
+.reading-panel__section+.reading-panel__section {
 	margin-top: 0.65rem;
 	padding-top: 0.65rem;
 	border-top: 1px dashed color-mix(in srgb, var(--game-btn-border) 35%, transparent);
@@ -3374,6 +3522,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+
 	.game-button:hover:not(:disabled),
 	.game-menu__item:hover:not(:disabled) {
 		transform: none;
@@ -3384,4 +3533,3 @@
 		transform: none;
 	}
 }
-

@@ -13,6 +13,10 @@ import {
 	animateCardFlip2D,
 	setCardFlipInstant,
 } from "../../lib/animation/card-flip";
+import {
+	animateCardFlip3D,
+	setCardFlip3DInstant,
+} from "../../lib/animation/card-flip-3d";
 import { CARD_FLIP_DURATION_MS } from "../../lib/animation/constants";
 import { CardBack } from "../brand/CardBack";
 import { CardArtMark } from "../brand/CardArtMark";
@@ -34,6 +38,7 @@ interface TarotCardProps {
 	className?: string;
 	disableHoverPreview?: boolean;
 	uprightPreview?: boolean;
+	flipMode?: "gsap-2d" | "css-3d";
 }
 
 function canHoverPreview() {
@@ -56,6 +61,7 @@ export const TarotCard = memo(function TarotCard({
 	className = "",
 	disableHoverPreview = false,
 	uprightPreview = false,
+	flipMode = "gsap-2d",
 }: TarotCardProps) {
 	const { labels } = useLocale();
 	const cardId = card.id as CardId;
@@ -96,6 +102,8 @@ export const TarotCard = memo(function TarotCard({
 	const backLoading =
 		revealLoading || (preloadFront && !flipped && !frontReady);
 
+	const is3DFlip = flipMode === "css-3d";
+
 	useLayoutEffect(() => {
 		const inner = innerRef.current;
 		const back = backFaceRef.current;
@@ -103,16 +111,24 @@ export const TarotCard = memo(function TarotCard({
 		if (!inner || !back || !front) return;
 
 		if (!flipInitializedRef.current) {
-			setCardFlipInstant(flipped, inner, back, front);
+			if (is3DFlip) {
+				setCardFlip3DInstant(flipped, inner);
+			} else {
+				setCardFlipInstant(flipped, inner, back, front);
+			}
 			prevFlippedRef.current = flipped;
 			flipInitializedRef.current = true;
 			return;
 		}
 
 		if (!flipAnimating) {
-			setCardFlipInstant(prevFlippedRef.current, inner, back, front);
+			if (is3DFlip) {
+				setCardFlip3DInstant(prevFlippedRef.current, inner);
+			} else {
+				setCardFlipInstant(prevFlippedRef.current, inner, back, front);
+			}
 		}
-	}, [flipAnimating, flipped, frontReady, imageSrc]);
+	}, [flipAnimating, flipped, frontReady, imageSrc, is3DFlip]);
 
 	useEffect(() => {
 		if (!flipInitializedRef.current) return;
@@ -126,7 +142,9 @@ export const TarotCard = memo(function TarotCard({
 		prevFlippedRef.current = flipped;
 		setFlipAnimating(true);
 
-		const timeline = animateCardFlip2D(flipped, inner, back, front);
+		const timeline = is3DFlip
+			? animateCardFlip3D(flipped, inner)
+			: animateCardFlip2D(flipped, inner, back, front);
 		void timeline.then(() => {
 			setFlipAnimating(false);
 			if (flipped && sparkleOnRevealRef.current) {
@@ -137,7 +155,7 @@ export const TarotCard = memo(function TarotCard({
 				onRevealFlipCompleteRef.current?.(index);
 			}
 		});
-	}, [flipped, index]);
+	}, [flipped, index, is3DFlip]);
 
 	useEffect(() => {
 		if (dealIndex === undefined || !dealRef.current || dealPlayedRef.current) {
@@ -325,7 +343,8 @@ export const TarotCard = memo(function TarotCard({
 			className={["tarot-card", className].filter(Boolean).join(" ")}
 			data-reveal-loading={revealLoading ? "true" : undefined}
 			data-preview-elevated={previewElevated ? "true" : undefined}
-			data-gsap-flip="true"
+			data-gsap-flip={is3DFlip ? undefined : "true"}
+			data-flip-mode={is3DFlip ? "3d" : undefined}
 		>
 			<div
 				ref={dealRef}

@@ -11,6 +11,7 @@ export interface SfxContextValue {
 	playFlip: () => void;
 	playShuffle: () => void;
 	playReveal: () => void;
+	playCardDeal: () => void;
 }
 
 export const SfxContext = createContext<SfxContextValue | null>(null);

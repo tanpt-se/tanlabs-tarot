@@ -1,107 +1,160 @@
-export const SELF_VIEW_MAX_SPREAD_CARDS = 10;
+import {
+	computeSpreadSlotRects,
+	didSelfViewCardChangeRow as didSelfViewCardChangeRowLayouts,
+	didSelfViewLayoutChange,
+	getDeviceProfile,
+	getSelfViewCardRowIndex as getSelfViewCardRowIndexFromSizes,
+	hasSelfViewCrossRowShift as hasSelfViewCrossRowShiftLayouts,
+	SELF_VIEW_MAX_SPREAD_CARDS,
+	solveSpreadLayout,
+	slotRectToViewport,
+	shouldUseSelfViewLayoutFlight as shouldUseSelfViewLayoutFlightLayouts,
+	type SelfViewSpreadLayoutResult,
+	type SelfViewSpreadSlotRect,
+} from "./spread-layout-engine";
+import {
+	createDefaultViewportConstraints,
+	readSelfViewViewportConstraints,
+} from "./spread-layout-metrics";
 
-export function canSelfViewZoom(cardCount: number): boolean {
-	return cardCount >= 1;
+export { SELF_VIEW_MAX_SPREAD_CARDS };
+export type { SelfViewSpreadSlotRect };
+
+export type SelfViewSpreadLayout = SelfViewSpreadLayoutResult;
+
+const layoutCache = new Map<string, SelfViewSpreadLayoutResult | null>();
+
+function getLayoutCacheKey(
+	cardCount: number,
+	constraints: ReturnType<typeof readSelfViewViewportConstraints>,
+): string {
+	if (!constraints) return `${cardCount}:default`;
+	return [
+		cardCount,
+		Math.round(constraints.availableWidth),
+		Math.round(constraints.availableHeight),
+		Math.round(constraints.colGapPx * 10),
+	].join(":");
 }
 
-export type SelfViewSpreadLayout = {
-	rowWidth: number;
-	sizingRowWidth: number;
-	rows: number;
-	cardScale: number;
-	rowSizes: number[];
-};
+function resolveConstraints(
+	overrides?: Partial<{
+		viewportWidth: number;
+		viewportHeight: number;
+	}>,
+) {
+	const live = readSelfViewViewportConstraints();
+	if (live) return live;
 
-/**
- * Row splits:
- * 1–4: one centered row | 5: 3+2 | 6: 3+3 | 7: 4+3 | 8: 4+4 | 9: 5+4 | 10: 5+5
- */
-const ROW_WIDTH_BY_COUNT: Record<number, number> = {
-	1: 1,
-	2: 2,
-	3: 3,
-	4: 4,
-	5: 3,
-	6: 3,
-	7: 4,
-	8: 4,
-	9: 5,
-	10: 5,
-};
-
-/** Unified card size within each band (same approach as 1–4). */
-const SIZE_GROUP_BY_COUNT: Record<number, { sizingRowWidth: number; cardScale: number }> =
-	{
-		1: { sizingRowWidth: 4, cardScale: 1.84 },
-		2: { sizingRowWidth: 4, cardScale: 1.84 },
-		3: { sizingRowWidth: 4, cardScale: 1.84 },
-		4: { sizingRowWidth: 4, cardScale: 1.84 },
-		5: { sizingRowWidth: 3, cardScale: 1.5 },
-		6: { sizingRowWidth: 3, cardScale: 1.5 },
-		7: { sizingRowWidth: 4, cardScale: 1.26 },
-		8: { sizingRowWidth: 4, cardScale: 1.26 },
-		9: { sizingRowWidth: 5, cardScale: 1.12 },
-		10: { sizingRowWidth: 5, cardScale: 1.12 },
-	};
-
-function getSizeGroup(count: number) {
-	return (
-		SIZE_GROUP_BY_COUNT[count] ?? {
-			sizingRowWidth: 5,
-			cardScale: SIZE_GROUP_BY_COUNT[10]!.cardScale,
-		}
-	);
-}
-
-function buildRowSizes(cardCount: number): number[] {
-	const rowWidth = ROW_WIDTH_BY_COUNT[cardCount] ?? 5;
-	const rowSizes: number[] = [];
-	let remaining = cardCount;
-
-	while (remaining > 0) {
-		const rowSize = Math.min(rowWidth, remaining);
-		rowSizes.push(rowSize);
-		remaining -= rowSize;
+	if (overrides?.viewportWidth && overrides?.viewportHeight) {
+		return createDefaultViewportConstraints(
+			overrides.viewportWidth,
+			overrides.viewportHeight,
+		);
 	}
 
-	return rowSizes;
+	return createDefaultViewportConstraints(1024, 768);
 }
 
-function getSizingRowWidth(count: number): number {
-	return getSizeGroup(count).sizingRowWidth;
+function emptyLayout(): SelfViewSpreadLayout {
+	return {
+		rowSizes: [],
+		rows: 0,
+		cardWidthPx: 0,
+		cardHeightPx: 0,
+		colGapPx: 0,
+		rowGapPx: 0,
+		verticalGapSlicePx: 0,
+		safeArea: { top: 0, bottom: 0, side: 0 },
+		spreadHeightPx: 0,
+		spreadWidthPx: 0,
+		maxCols: 1,
+		rowWidth: 1,
+		sizingRowWidth: 1,
+		cardScale: 1,
+	};
 }
 
-function getCardScale(count: number): number {
-	return getSizeGroup(count).cardScale;
-}
-
-export function getSelfViewSpreadLayout(cardCount: number): SelfViewSpreadLayout {
+export function getSelfViewSpreadLayout(
+	cardCount: number,
+	options?: {
+		viewportWidth?: number;
+		viewportHeight?: number;
+		constraints?: ReturnType<typeof readSelfViewViewportConstraints>;
+	},
+): SelfViewSpreadLayout {
 	if (cardCount <= 0) {
-		return {
-			rowWidth: 1,
-			sizingRowWidth: getSizingRowWidth(4),
-			rows: 0,
-			cardScale: 1,
-			rowSizes: [],
-		};
+		return emptyLayout();
 	}
 
 	const count = Math.min(cardCount, SELF_VIEW_MAX_SPREAD_CARDS);
-	const rowWidth = ROW_WIDTH_BY_COUNT[count] ?? 5;
-	const rowSizes = buildRowSizes(count);
-	const sizeGroup = getSizeGroup(count);
+	const constraints =
+		options?.constraints ??
+		resolveConstraints({
+			viewportWidth: options?.viewportWidth,
+			viewportHeight: options?.viewportHeight,
+		});
 
+	const cacheKey = getLayoutCacheKey(count, constraints);
+	const cached = layoutCache.get(cacheKey);
+	if (cached) return cached;
+
+	const profile = getDeviceProfile(constraints.availableWidth);
+	const solved = solveSpreadLayout(count, constraints, profile);
+
+	const layout = solved ?? emptyLayout();
+	layoutCache.set(cacheKey, layout);
+	return layout;
+}
+
+export function clearSelfViewSpreadLayoutCache(): void {
+	layoutCache.clear();
+}
+
+export function didSelfViewLayoutResize(
+	previousCount: number,
+	nextCount: number,
+	options?: {
+		viewportWidth?: number;
+		viewportHeight?: number;
+	},
+): boolean {
+	if (previousCount <= 0 || nextCount <= 0) return false;
+
+	const prev = getSelfViewSpreadLayout(previousCount, options);
+	const next = getSelfViewSpreadLayout(nextCount, options);
+	return didSelfViewLayoutChange(prev, next);
+}
+
+export function getSelfViewSpreadStyle(
+	layout: SelfViewSpreadLayout,
+): Record<string, string | number> {
 	return {
-		rowWidth,
-		sizingRowWidth: sizeGroup.sizingRowWidth,
-		rows: rowSizes.length,
-		cardScale: sizeGroup.cardScale,
-		rowSizes,
+		"--self-view-layout-rows": layout.rows,
+		"--self-view-card-width": `${layout.cardWidthPx}px`,
+		"--self-view-spread-measured-h": `${layout.spreadHeightPx}px`,
+		"--self-view-spread-gap": `${layout.colGapPx}px`,
+		"--self-view-row-gap": `${layout.verticalGapSlicePx}px`,
+		"--self-view-safe-pad-block": `${layout.safeArea.top}px`,
+		"--self-view-safe-pad-bottom": `${layout.safeArea.bottom}px`,
+		"--spread-card-width": `${layout.cardWidthPx}px`,
 	};
 }
 
-/** True when adding a card crosses a layout band (rows / scale / row width). */
-export function didSelfViewLayoutResize(
+export function getSelfViewSpreadGapPx(cardCount: number): number {
+	return getSelfViewSpreadLayout(cardCount).colGapPx;
+}
+
+export function getSelfViewCardRowIndex(
+	cardIndex: number,
+	cardCount: number,
+): number {
+	const layout = getSelfViewSpreadLayout(cardCount);
+	return getSelfViewCardRowIndexFromSizes(cardIndex, layout.rowSizes);
+}
+
+export function didSelfViewCardChangeRow(
+	cardIndex: number,
 	previousCount: number,
 	nextCount: number,
 ): boolean {
@@ -109,190 +162,99 @@ export function didSelfViewLayoutResize(
 
 	const prev = getSelfViewSpreadLayout(previousCount);
 	const next = getSelfViewSpreadLayout(nextCount);
-
-	return (
-		prev.cardScale !== next.cardScale ||
-		prev.rows !== next.rows ||
-		prev.sizingRowWidth !== next.sizingRowWidth
-	);
+	return didSelfViewCardChangeRowLayouts(cardIndex, prev, next);
 }
 
-export function getSelfViewSpreadStyle(
-	layout: SelfViewSpreadLayout,
-): Record<string, string | number> {
-	return {
-		"--self-view-row-width": layout.rowWidth,
-		"--self-view-sizing-row-width": layout.sizingRowWidth,
-		"--self-view-layout-rows": layout.rows,
-		"--self-view-card-scale": layout.cardScale,
-	};
+export function hasSelfViewCrossRowShift(
+	previousCount: number,
+	nextCount: number,
+	slotIndex: number,
+): boolean {
+	const prev = getSelfViewSpreadLayout(previousCount);
+	const next = getSelfViewSpreadLayout(nextCount);
+	return hasSelfViewCrossRowShiftLayouts(prev, next, slotIndex);
 }
 
-function readCssLengthPx(
-	source: Element | null,
-	varName: string,
-	fallbackRem: number,
-): number {
-	if (typeof document === "undefined") {
-		return fallbackRem * 16;
+export function shouldUseSelfViewLayoutFlight(
+	previousCount: number,
+	nextCount: number,
+	slotIndex: number,
+): boolean {
+	const prev = getSelfViewSpreadLayout(previousCount);
+	const next = getSelfViewSpreadLayout(nextCount);
+	return shouldUseSelfViewLayoutFlightLayouts(prev, next, slotIndex);
+}
+
+export function computeSelfViewSpreadSlotRects(
+	cardCount: number,
+	options?: {
+		cardWidthPx?: number;
+		spreadWidthPx?: number;
+		layout?: SelfViewSpreadLayout;
+	},
+): Map<number, SelfViewSpreadSlotRect> {
+	let layout = options?.layout ?? getSelfViewSpreadLayout(cardCount);
+
+	if (options?.spreadWidthPx && options.spreadWidthPx > 0) {
+		layout = { ...layout, spreadWidthPx: options.spreadWidthPx };
 	}
 
-	const rem =
-		parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
-	const styles = source
-		? getComputedStyle(source)
-		: getComputedStyle(document.documentElement);
-	const raw = styles.getPropertyValue(varName).trim();
-	if (!raw) return fallbackRem * rem;
-
-	const probe = document.createElement("div");
-	probe.style.position = "absolute";
-	probe.style.visibility = "hidden";
-	probe.style.pointerEvents = "none";
-	probe.style.width = raw;
-	document.body.appendChild(probe);
-	const px = probe.getBoundingClientRect().width;
-	probe.remove();
-	return px || fallbackRem * rem;
-}
-
-type SelfViewCardWidthOptions = {
-	/** Use layout max-width for the container, not the live (possibly narrower) spread wrap. */
-	useLayoutContainerWidth?: boolean;
-};
-
-/** Mirrors `.self-view-spread-wrap` max-width for a given layout. */
-function getSelfViewSpreadContainerWidthPx(
-	layout: SelfViewSpreadLayout,
-	cardMaxBase: number,
-	spreadGap: number,
-	rem: number,
-	parentWidth: number,
-): number {
-	const intrinsic =
-		layout.sizingRowWidth * cardMaxBase * layout.cardScale +
-		(layout.sizingRowWidth - 1) * spreadGap +
-		0.75 * rem;
-
-	return Math.min(intrinsic, parentWidth);
-}
-
-/** Matches `.self-view-spread` card width for a given spread count. */
-function getSelfViewCardWidthPx(
-	layout: SelfViewSpreadLayout,
-	options?: SelfViewCardWidthOptions,
-): number {
-	if (typeof window === "undefined") {
-		return 16 * 8.25 * getCardScale(1);
+	if (options?.cardWidthPx && options.cardWidthPx > 0) {
+		const aspect = layout.cardHeightPx / layout.cardWidthPx;
+		layout = {
+			...layout,
+			cardWidthPx: options.cardWidthPx,
+			cardHeightPx: options.cardWidthPx * aspect,
+		};
 	}
 
-	const shell = document.querySelector(".app-shell");
-	const screen = document.querySelector(".self-view-screen");
-	const spreadWrap = document.querySelector(".self-view-spread-wrap");
-	const rem =
-		parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
-
-	const cardMaxBase = readCssLengthPx(
-		screen,
-		"--self-view-card-max-base",
-		window.matchMedia("(max-width: 640px)").matches
-			? 7
-			: window.matchMedia("(min-width: 900px)").matches
-				? 8.75
-				: 8.25,
-	);
-	const spreadGap = readCssLengthPx(screen, "--self-view-spread-gap", 0.42);
-	const frameSide = readCssLengthPx(shell, "--frame-side", 1.25);
-	const frameTop = readCssLengthPx(shell, "--frame-top", 2);
-	const frameBottom = readCssLengthPx(shell, "--frame-bottom", 2);
-	const menuHeight = readCssLengthPx(
-		document.documentElement,
-		"--game-menu-item-min-height",
-		4.15,
-	);
-
-	const cardMax = cardMaxBase * layout.cardScale;
-	const chromeHeight = readCssLengthPx(
-		document.documentElement,
-		"--button-height",
-		3.85,
-	);
-	const drawReserve = readCssLengthPx(screen, "--self-view-draw-reserve", 5);
-	const appGap = 0.35 * rem;
-	const animPadBlock = readCssLengthPx(
-		screen,
-		"--self-view-card-anim-pad-block",
-		0.7,
-	);
-	const layoutFudge = readCssLengthPx(
-		screen,
-		"--self-view-spread-layout-fudge",
-		1.1,
-	);
-	const wrapHeight =
-		spreadWrap?.clientHeight ||
-		window.innerHeight -
-			frameTop -
-			frameBottom -
-			menuHeight -
-			chromeHeight -
-			appGap -
-			drawReserve -
-			0.5 * rem;
-	const heightAspectDivisor = layout.rows === 1 ? 1.58 : 1.72;
-	const heightLimited =
-		(wrapHeight -
-			layoutFudge -
-			(layout.rows - 1) * spreadGap -
-			layout.rows * animPadBlock) /
-		layout.rows /
-		heightAspectDivisor;
-	const parentWidth =
-		screen?.clientWidth || window.innerWidth - 2 * frameSide;
-	const availableW = options?.useLayoutContainerWidth
-		? getSelfViewSpreadContainerWidthPx(
-				layout,
-				cardMaxBase,
-				spreadGap,
-				rem,
-				parentWidth,
-			)
-		: spreadWrap?.clientWidth || parentWidth;
-	const widthLimited =
-		(availableW - (layout.sizingRowWidth - 1) * spreadGap) /
-		layout.sizingRowWidth;
-	const scaleCap = layout.rows === 1 ? cardMax : Number.POSITIVE_INFINITY;
-
-	return Math.min(scaleCap, heightLimited, widthLimited);
+	return computeSpreadSlotRects(layout);
 }
 
-/** Layout for zoom target: one hero card centered on the viewport. */
-const SELF_VIEW_FOCUS_CARD_LAYOUT: SelfViewSpreadLayout = {
-	rowWidth: 1,
-	sizingRowWidth: 1,
-	rows: 1,
-	cardScale: 3,
-	rowSizes: [1],
-};
+export { slotRectToViewport };
 
-/** Target hero card height when zoomed (60vh). */
+export function getSelfViewSpreadCardWidthPx(cardCount: number): number {
+	return getSelfViewSpreadLayout(cardCount).cardWidthPx;
+}
+
+export function getSelfViewSpreadMeasuredHeightPx(
+	cardCount: number,
+	_cardWidthPx?: number,
+): number {
+	return getSelfViewSpreadLayout(cardCount).spreadHeightPx;
+}
+
+export function canSelfViewZoom(cardCount: number): boolean {
+	return cardCount >= 1;
+}
+
+/** Target hero card width when zoomed (60vh). */
 const SELF_VIEW_FOCUS_CARD_HEIGHT_VH = 0.6;
-/** Matches `.tarot-card__inner` aspect-ratio 2 / 3.4 (height ÷ width). */
-const SELF_VIEW_FOCUS_CARD_HEIGHT_RATIO = 3.4 / 2;
 
-/**
- * Zoom target = prominent hero card sized from the viewport (not the multi-row spread slot).
- */
 export function getSelfViewSingleCardWidth(): number {
-	const layout = SELF_VIEW_FOCUS_CARD_LAYOUT;
-
 	if (typeof window === "undefined") {
-		return getSelfViewCardWidthPx(layout, { useLayoutContainerWidth: true });
+		return getSelfViewSpreadCardWidthPx(1);
 	}
 
 	const targetHeight = window.innerHeight * SELF_VIEW_FOCUS_CARD_HEIGHT_VH;
-	const widthFromHeight = targetHeight / SELF_VIEW_FOCUS_CARD_HEIGHT_RATIO;
+	const widthFromHeight = targetHeight / (3.4 / 2);
 	const widthFromViewport = window.innerWidth * 0.92;
 
 	return Math.min(widthFromHeight, widthFromViewport);
 }
+
+export {
+	createDefaultViewportConstraints,
+	readSelfViewViewportConstraints,
+} from "./spread-layout-metrics";
+export {
+	computeSpreadSlotRects,
+	distributeCardsToRows,
+	getDeviceProfile,
+	getSpreadContentHeightPx,
+	solveSpreadLayout,
+	SELF_VIEW_DESKTOP_SPREAD_WIDTH_RATIO,
+	SELF_VIEW_SINGLE_ROW_MAX_WIDTH_RATIO,
+	shouldCapSelfViewSpreadWidth,
+	type SelfViewViewportConstraints,
+} from "./spread-layout-engine";

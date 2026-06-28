@@ -56,12 +56,11 @@ export const vi: UiLabels = {
 	aboutLinkedInLabel: "LinkedIn",
 	aboutFacebookLabel: "Facebook",
 	aboutPhoneLabel: "Điện thoại",
-	aboutWhatsNew: "Mới trong 0.3",
+	aboutWhatsNew: "Mới trong 0.4",
 	aboutUpdateNotes: [
-		"Animation rút bài self-view mượt hơn, giữ kích thước lá ổn định khi đổi layout.",
-		"Thanh dưới: nút Lịch sử và Trải lại (icon wood) hai bên Rút một lá.",
-		"Self-view: tới 10 lá, layout nhiều hàng và phím tắt (H, C, 1–0).",
-		"Màn Thông tin kèm phiên bản và ghi chú cập nhật từ menu chính.",
+		"Self-view: bộ bài hiển thị cạnh nút rút, lá bay theo cung từ bộ bài vào spread.",
+		"Lật bài 3D khi mở mặt sau khi rút — có sparkle và âm thanh đồng bộ.",
+		"Giữ layout shift mượt khi thêm lá; preload art trước khi lật.",
 	],
 	selfViewMode: "Tôi là Tarot Reader",
 	selfViewModeDesc:
