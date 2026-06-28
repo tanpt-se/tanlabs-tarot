@@ -1,8 +1,8 @@
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 
-export type GameButtonTone = "light" | "wood";
+type GameButtonTone = "light" | "wood";
 
-export type GameButtonLayout = "text" | "icon" | "nav" | "stack";
+type GameButtonLayout = "text" | "icon" | "nav" | "stack";
 
 export interface GameButtonProps
 	extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, "children"> {

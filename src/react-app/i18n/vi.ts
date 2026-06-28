@@ -56,12 +56,12 @@ export const vi: UiLabels = {
 	aboutLinkedInLabel: "LinkedIn",
 	aboutFacebookLabel: "Facebook",
 	aboutPhoneLabel: "Điện thoại",
-	aboutWhatsNew: "Mới trong 0.2",
+	aboutWhatsNew: "Mới trong 0.3",
 	aboutUpdateNotes: [
-		"Chữ và icon trong modal, thanh trên cùng to hơn — dễ đọc hơn.",
-		"Màn Thông tin chuyển ra menu chính, kèm phiên bản và ghi chú cập nhật.",
-		"Bảng phím tắt đổi tên, gọn hơn và có thể cuộn.",
-		"Chế độ tự trải: rút bài tự do, lịch sử, zoom và phím tắt.",
+		"Animation rút bài self-view mượt hơn, giữ kích thước lá ổn định khi đổi layout.",
+		"Thanh dưới: nút Lịch sử và Trải lại (icon wood) hai bên Rút một lá.",
+		"Self-view: tới 10 lá, layout nhiều hàng và phím tắt (H, C, 1–0).",
+		"Màn Thông tin kèm phiên bản và ghi chú cập nhật từ menu chính.",
 	],
 	selfViewMode: "Tôi là Tarot Reader",
 	selfViewModeDesc:
@@ -69,6 +69,7 @@ export const vi: UiLabels = {
 	selfViewDrawOne: "Rút một lá",
 	selfViewCardPlaceholder: "Card sẽ được xuất hiện ở đây",
 	selfViewClear: "Xóa",
+	selfViewRestart: "Trải lại",
 	selfViewResetTitle: "Trải bài mới?",
 	selfViewResetMessage:
 		"Lần trải hiện tại sẽ được lưu vào lịch sử. Bạn có muốn bắt đầu lại từ đầu?",
@@ -93,7 +94,7 @@ export const vi: UiLabels = {
 	helpShortcutM: "Bật/tắt nhạc nền",
 	helpShortcutSpace: "Rút một lá bài mới",
 	helpShortcutH: "Mở danh sách lịch sử",
-	helpShortcutC: "Xóa lần trải hiện tại",
+	helpShortcutC: "Trải lại bộ bài hiện tại",
 	helpShortcutCardZoom:
 		"Zoom lá theo vị trí (1–9, 0 = lá thứ 10; trái sang phải, trên xuống dưới; từ 5 lá)",
 	helpShortcutR:

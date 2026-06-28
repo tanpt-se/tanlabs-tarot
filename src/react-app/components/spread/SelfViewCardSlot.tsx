@@ -23,6 +23,13 @@ export function SelfViewCardSlot({
 			className="tarot-card self-view-card-slot"
 			data-self-view-slot-placeholder="true"
 			aria-hidden
-		/>
+		>
+			{/* Mirror deal shell so slot rects match the real card motion target. */}
+			<div className="tarot-card__deal" aria-hidden>
+				<div className="tarot-card__flip" aria-hidden>
+					<div className="tarot-card__inner" />
+				</div>
+			</div>
+		</div>
 	);
 }

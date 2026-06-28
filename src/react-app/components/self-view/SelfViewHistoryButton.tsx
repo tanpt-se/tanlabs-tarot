@@ -1,3 +1,4 @@
+import { History } from "lucide-react";
 import { useEffect, useId, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useEscapeKey } from "../../hooks/use-escape-key";
@@ -105,15 +106,21 @@ export function SelfViewHistoryButton({
 	return (
 		<>
 			<GameButton
-				layout="nav"
-				tone="light"
-				className="game-button--reader game-button--history self-view-history-trigger"
+				layout="icon"
+				tone="wood"
+				className="self-view-draw-side-action self-view-history-trigger"
 				onClick={() => onOpenChange(true)}
+				aria-label={labels.selfViewHistoryTitle}
 				aria-expanded={open}
 				aria-controls={listId}
 				aria-haspopup="dialog"
 			>
-				<span className="game-button__label">{labels.selfViewHistoryTitle}</span>
+				<History
+					className="game-button__icon"
+					aria-hidden="true"
+					strokeWidth={1.75}
+					absoluteStrokeWidth
+				/>
 			</GameButton>
 			{drawer}
 		</>

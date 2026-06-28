@@ -1,8 +1,6 @@
 import { useContext } from "react";
 import { ReversedUprightHoldContext } from "../providers/reversed-upright-hold-provider";
 
-export { ReversedUprightHoldProvider } from "../providers/reversed-upright-hold-provider";
-
 export function useReversedUprightHold() {
 	const context = useContext(ReversedUprightHoldContext);
 	if (!context) {

@@ -4,13 +4,13 @@ import { prefersReducedMotion } from "../../lib/animation/reduced-motion";
 
 const reduced = prefersReducedMotion();
 
-export const motionFadeUp = {
+const motionFadeUp = {
 	initial: reduced ? false : { opacity: 0, y: 18 },
 	animate: { opacity: 1, y: 0 },
 	exit: reduced ? undefined : { opacity: 0, y: -12 },
 };
 
-export const motionFade = {
+const motionFade = {
 	initial: reduced ? false : { opacity: 0 },
 	animate: { opacity: 1 },
 	exit: reduced ? undefined : { opacity: 0 },

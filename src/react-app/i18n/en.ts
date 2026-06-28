@@ -56,12 +56,12 @@ export const en: UiLabels = {
 	aboutLinkedInLabel: "LinkedIn",
 	aboutFacebookLabel: "Facebook",
 	aboutPhoneLabel: "Phone",
-	aboutWhatsNew: "What's new in 0.2",
+	aboutWhatsNew: "What's new in 0.3",
 	aboutUpdateNotes: [
-		"Larger text and icons in modals and the top bar for easier reading.",
-		"About screen moved to the home menu with version and release notes.",
-		"Keyboard shortcuts panel renamed, simplified, and made scrollable.",
-		"Self-view mode: draw cards freely with history, zoom, and shortcuts.",
+		"Self-view draw animation: smoother card shifts with stable sizing across grid changes.",
+		"Draw bar: History and Restart icon buttons flank Draw a card.",
+		"Self-view: up to 10 cards with multi-row layout and keyboard shortcuts (H, C, 1–0).",
+		"About screen with version info and release notes from the home menu.",
 	],
 	selfViewMode: "I'm Tarot Reader",
 	selfViewModeDesc:
@@ -69,6 +69,7 @@ export const en: UiLabels = {
 	selfViewDrawOne: "Draw a card",
 	selfViewCardPlaceholder: "Your card will appear here",
 	selfViewClear: "Clear",
+	selfViewRestart: "Restart spread",
 	selfViewResetTitle: "Start a new spread?",
 	selfViewResetMessage:
 		"Your current cards will be saved to history. Start fresh with a new deck?",
@@ -93,7 +94,7 @@ export const en: UiLabels = {
 	helpShortcutM: "Mute or unmute background music",
 	helpShortcutSpace: "Draw one card",
 	helpShortcutH: "Open history list",
-	helpShortcutC: "Clear current spread",
+	helpShortcutC: "Restart current spread",
 	helpShortcutCardZoom:
 		"Zoom card by position (1–9, 0 = 10th; left to right, top to bottom; 5+ cards)",
 	helpShortcutR: "Hold to show reversed cards upright (works app-wide)",

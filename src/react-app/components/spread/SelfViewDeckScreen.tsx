@@ -1,26 +1,15 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
-import { flushSync } from "react-dom";
 import { useLocale } from "../../hooks/use-locale";
 import { useSfx } from "../../hooks/use-sfx";
 import { useEscapeKey } from "../../hooks/use-escape-key";
 import { useReversedUprightHold } from "../../hooks/use-reversed-upright-hold";
+import { useSelfViewDrawLayout } from "../../hooks/use-self-view-draw-layout";
 import {
 	isAppShortcutBlocked,
 	shouldIgnoreAppShortcut,
 } from "../../lib/keyboard/app-shortcut";
 import { parseSelfViewCardSlotKey } from "../../lib/keyboard/self-view-card-slot";
-import {
-	captureSelfViewCardRects,
-	killSelfViewCardInPlaceReveal,
-	killSelfViewSlotReservation,
-	playSelfViewCardInPlaceReveal,
-	playSelfViewSlotReservation,
-	prepareSelfViewSlotReservation,
-	type SelfViewCardRevealHandle,
-	type SelfViewPreparedSlotReservation,
-	type SelfViewSlotReservationHandle,
-} from "../../lib/animation/self-view-card-entrance";
 import { preloadTopOfDeck } from "../../lib/tarot/card-image";
 import {
 	canSelfViewZoom,
@@ -29,8 +18,7 @@ import {
 	SELF_VIEW_MAX_SPREAD_CARDS,
 } from "../../lib/self-view/spread-layout";
 import { useSelfViewSession } from "../../hooks/use-self-view-session";
-import { GameButton } from "../GameButton";
-import { CloseButton } from "../CloseButton";
+import { SelfViewDrawBar } from "../self-view/SelfViewDrawBar";
 import {
 	SelfViewCardFocusOverlay,
 	type SelfViewCardFocusOverlayHandle,
@@ -69,20 +57,7 @@ export function SelfViewDeckScreen() {
 	} = useSelfViewSession();
 	const { held: reversedUprightHeld } = useReversedUprightHold();
 	const [focusState, setFocusState] = useState<FocusState | null>(null);
-	const cardRootsRef = useRef<Map<number, HTMLDivElement>>(new Map());
-	const spreadWrapRef = useRef<HTMLDivElement>(null);
 	const focusOverlayRef = useRef<SelfViewCardFocusOverlayHandle>(null);
-	const prevSpreadCountRef = useRef(0);
-	const cardRectsRef = useRef<Map<number, DOMRect>>(new Map());
-	const layoutAnimRef = useRef<SelfViewSlotReservationHandle | null>(null);
-	const preparedAnimRef = useRef<SelfViewPreparedSlotReservation | null>(null);
-	const revealAnimRef = useRef<SelfViewCardRevealHandle | null>(null);
-	const layoutAnimFrameRef = useRef<number | null>(null);
-	const layoutAnimatingRef = useRef(false);
-	const [slotReservationSettled, setSlotReservationSettled] = useState(false);
-	const pendingRevealIndexRef = useRef<number | null>(null);
-	const drawSfxPlayedRef = useRef<Set<number>>(new Set());
-	const [layoutAnimating, setLayoutAnimating] = useState(false);
 
 	const pendingSlotIndex = useMemo(() => {
 		if (isViewingHistory || revealingIndex === null) return null;
@@ -93,8 +68,39 @@ export function SelfViewDeckScreen() {
 	const spreadSlotCount =
 		pendingSlotIndex !== null ? drawnCards.length + 1 : drawnCards.length;
 
+	const spreadLayout = useMemo(
+		() => getSelfViewSpreadLayout(spreadSlotCount),
+		[spreadSlotCount],
+	);
+	const spreadStyle = useMemo(
+		() => getSelfViewSpreadStyle(spreadLayout),
+		[spreadLayout],
+	);
+
+	const {
+		cardRootsRef,
+		spreadWrapRef,
+		registerCardRoot,
+		layoutAnimating,
+		spreadSurfaceStyle,
+	} = useSelfViewDrawLayout({
+		isViewingHistory,
+		displayedCardsLength: displayedCards.length,
+		drawnCardsLength: drawnCards.length,
+		revealingIndex,
+		pendingDrawImageReady,
+		commitPendingDraw,
+		playFlip,
+		spreadSlotCount,
+		spreadStyle,
+		spreadLayoutRows: spreadLayout.rows,
+	});
+
 	const focusStateRef = useRef(focusState);
-	focusStateRef.current = focusState;
+
+	useEffect(() => {
+		focusStateRef.current = focusState;
+	}, [focusState]);
 
 	const closeFocus = useCallback(async () => {
 		await focusOverlayRef.current?.close();
@@ -123,6 +129,7 @@ export function SelfViewDeckScreen() {
 			});
 		},
 		[
+			cardRootsRef,
 			closeFocus,
 			displayedCards.length,
 			flippedIndices,
@@ -166,216 +173,9 @@ export function SelfViewDeckScreen() {
 	useEscapeKey(handleEscape, true);
 
 	useEffect(() => {
+		// eslint-disable-next-line react-hooks/set-state-in-effect -- reset focus on spread context change
 		setFocusState(null);
 	}, [displayedCards.length, isViewingHistory]);
-
-	useEffect(() => {
-		if (revealingIndex !== null) {
-			setSlotReservationSettled(false);
-		}
-	}, [revealingIndex]);
-
-	useEffect(() => {
-		if (isViewingHistory) {
-			drawSfxPlayedRef.current.clear();
-			setSlotReservationSettled(false);
-			return;
-		}
-
-		if (!slotReservationSettled || !pendingDrawImageReady) {
-			return;
-		}
-
-		if (revealingIndex === null) {
-			return;
-		}
-
-		pendingRevealIndexRef.current = revealingIndex;
-		setSlotReservationSettled(false);
-		commitPendingDraw();
-	}, [
-		commitPendingDraw,
-		isViewingHistory,
-		pendingDrawImageReady,
-		revealingIndex,
-		slotReservationSettled,
-	]);
-
-	useLayoutEffect(() => {
-		const killActiveSlotAnimation = () => {
-			const animated =
-				preparedAnimRef.current?.animatedElements ?? [];
-			killSelfViewSlotReservation(layoutAnimRef.current, animated);
-			layoutAnimRef.current = null;
-			preparedAnimRef.current = null;
-		};
-
-		const killActiveRevealAnimation = () => {
-			const index = revealAnimRef.current?.cardIndex ?? null;
-			killSelfViewCardInPlaceReveal(
-				revealAnimRef.current,
-				index !== null ? cardRootsRef.current.get(index) ?? null : null,
-			);
-			revealAnimRef.current = null;
-		};
-
-		if (isViewingHistory) {
-			killActiveSlotAnimation();
-			killActiveRevealAnimation();
-			prevSpreadCountRef.current = displayedCards.length;
-			cardRectsRef.current = captureSelfViewCardRects(cardRootsRef.current);
-			return;
-		}
-
-		const pendingSlot =
-			revealingIndex !== null && revealingIndex >= drawnCards.length;
-		const nextCount = pendingSlot
-			? revealingIndex + 1
-			: displayedCards.length;
-		const previousCount = prevSpreadCountRef.current;
-
-		if (nextCount === previousCount + 1 && pendingSlot) {
-			killActiveSlotAnimation();
-
-			flushSync(() => {
-				layoutAnimatingRef.current = true;
-				setLayoutAnimating(true);
-			});
-
-			const onSlotReserved = () => {
-				layoutAnimatingRef.current = false;
-				setLayoutAnimating(false);
-				cardRectsRef.current = captureSelfViewCardRects(
-					cardRootsRef.current,
-				);
-				const node = spreadWrapRef.current;
-				if (node) {
-					const height = node.clientHeight;
-					if (height > 0) {
-						setSpreadViewportH(height);
-					}
-				}
-				setSlotReservationSettled(true);
-			};
-
-			const startReservation = (
-				prepared: SelfViewPreparedSlotReservation,
-			) => {
-				preparedAnimRef.current = prepared;
-				layoutAnimRef.current = playSelfViewSlotReservation(
-					{
-						cardRoots: cardRootsRef.current,
-						onComplete: onSlotReserved,
-					},
-					prepared,
-				);
-			};
-
-			const prepared = prepareSelfViewSlotReservation({
-				cardRoots: cardRootsRef.current,
-				slotIndex: nextCount - 1,
-				oldCardRects: cardRectsRef.current,
-			});
-
-			if (prepared) {
-				startReservation(prepared);
-			} else if (!cardRootsRef.current.has(nextCount - 1)) {
-				layoutAnimFrameRef.current = requestAnimationFrame(() => {
-					layoutAnimFrameRef.current = null;
-					const retryPrepared = prepareSelfViewSlotReservation({
-						cardRoots: cardRootsRef.current,
-						slotIndex: nextCount - 1,
-						oldCardRects: cardRectsRef.current,
-					});
-					if (retryPrepared) {
-						startReservation(retryPrepared);
-					} else {
-						onSlotReserved();
-					}
-				});
-			} else {
-				onSlotReserved();
-			}
-		} else if (nextCount !== previousCount) {
-			cardRectsRef.current = captureSelfViewCardRects(cardRootsRef.current);
-		} else {
-			cardRectsRef.current = captureSelfViewCardRects(cardRootsRef.current);
-		}
-
-		prevSpreadCountRef.current = nextCount;
-
-		return () => {
-			if (layoutAnimFrameRef.current !== null) {
-				cancelAnimationFrame(layoutAnimFrameRef.current);
-				layoutAnimFrameRef.current = null;
-			}
-			killActiveSlotAnimation();
-			layoutAnimatingRef.current = false;
-			setLayoutAnimating(false);
-		};
-	}, [drawnCards.length, displayedCards.length, isViewingHistory, revealingIndex]);
-
-	useLayoutEffect(() => {
-		const index = pendingRevealIndexRef.current;
-		if (index === null || isViewingHistory) {
-			return;
-		}
-
-		const startReveal = (cardRoot: HTMLDivElement) => {
-			pendingRevealIndexRef.current = null;
-			if (!drawSfxPlayedRef.current.has(index)) {
-				drawSfxPlayedRef.current.add(index);
-				playFlip();
-			}
-
-			flushSync(() => {
-				layoutAnimatingRef.current = true;
-				setLayoutAnimating(true);
-			});
-
-			revealAnimRef.current = playSelfViewCardInPlaceReveal({
-				cardRoot,
-				cardIndex: index,
-				onComplete: () => {
-					layoutAnimatingRef.current = false;
-					setLayoutAnimating(false);
-					cardRectsRef.current = captureSelfViewCardRects(
-						cardRootsRef.current,
-					);
-				},
-			});
-		};
-
-		const cardRoot = cardRootsRef.current.get(index);
-		if (cardRoot) {
-			startReveal(cardRoot);
-			return;
-		}
-
-		layoutAnimFrameRef.current = requestAnimationFrame(() => {
-			layoutAnimFrameRef.current = null;
-			const retryRoot = cardRootsRef.current.get(index);
-			if (retryRoot) {
-				startReveal(retryRoot);
-			} else {
-				pendingRevealIndexRef.current = null;
-			}
-		});
-
-		return () => {
-			if (layoutAnimFrameRef.current !== null) {
-				cancelAnimationFrame(layoutAnimFrameRef.current);
-				layoutAnimFrameRef.current = null;
-			}
-		};
-	}, [drawnCards.length, isViewingHistory, playFlip]);
-
-	useEffect(() => {
-		if (spreadSlotCount === 0) {
-			prevSpreadCountRef.current = 0;
-			cardRectsRef.current = new Map();
-		}
-	}, [spreadSlotCount]);
 
 	useEffect(() => {
 		if (!isViewingHistory && deck.length > 0) {
@@ -386,17 +186,6 @@ export function SelfViewDeckScreen() {
 	const warmNextDraw = useCallback(() => {
 		preloadTopOfDeck(deck);
 	}, [deck]);
-
-	const registerCardRoot = useCallback(
-		(index: number, element: HTMLDivElement | null) => {
-			if (element) {
-				cardRootsRef.current.set(index, element);
-				return;
-			}
-			cardRootsRef.current.delete(index);
-		},
-		[],
-	);
 
 	const getCloseOrigin = useCallback(() => {
 		if (!focusState) {
@@ -409,7 +198,7 @@ export function SelfViewDeckScreen() {
 		}
 
 		return focusState.origin;
-	}, [focusState]);
+	}, [cardRootsRef, focusState]);
 
 	const handleFocusClosingStart = useCallback(() => {
 		setFocusState((current) =>
@@ -423,7 +212,7 @@ export function SelfViewDeckScreen() {
 		);
 	}, []);
 
-	const actionsDisabled =
+	const drawDisabled =
 		layoutAnimating ||
 		revealingIndex !== null ||
 		deck.length === 0 ||
@@ -431,8 +220,8 @@ export function SelfViewDeckScreen() {
 
 	const handleCardZoomHotkey = useCallback(
 		(slotIndex: number) => {
-		if (isAppShortcutBlocked(hasOverlayOpen)) return;
-		if (slotIndex < 0 || slotIndex >= displayedCards.length) return;
+			if (isAppShortcutBlocked(hasOverlayOpen)) return;
+			if (slotIndex < 0 || slotIndex >= displayedCards.length) return;
 
 			openCardFocus(slotIndex);
 		},
@@ -441,17 +230,16 @@ export function SelfViewDeckScreen() {
 
 	const handleDrawHotkey = useCallback(() => {
 		if (isAppShortcutBlocked(hasOverlayOpen)) return;
-		if (isViewingHistory || focusState || actionsDisabled) return;
+		if (isViewingHistory || focusState || drawDisabled) return;
 
 		warmNextDraw();
 		drawOne();
 	}, [
-		actionsDisabled,
+		drawDisabled,
 		drawOne,
 		focusState,
 		hasOverlayOpen,
 		isViewingHistory,
-		layoutAnimating,
 		warmNextDraw,
 	]);
 
@@ -476,53 +264,6 @@ export function SelfViewDeckScreen() {
 		return () => document.removeEventListener("keydown", onKeyDown);
 	}, [handleCardZoomHotkey, handleDrawHotkey]);
 
-	const spreadLayout = useMemo(
-		() => getSelfViewSpreadLayout(spreadSlotCount),
-		[spreadSlotCount],
-	);
-	const spreadStyle = useMemo(
-		() => getSelfViewSpreadStyle(spreadLayout),
-		[spreadLayout],
-	);
-	const [spreadViewportH, setSpreadViewportH] = useState<number | null>(null);
-
-	useLayoutEffect(() => {
-		const node = spreadWrapRef.current;
-		if (!node) {
-			setSpreadViewportH(null);
-			return;
-		}
-
-		const syncViewportHeight = () => {
-			if (layoutAnimatingRef.current) return;
-
-			const height = node.clientHeight;
-			if (height > 0) {
-				setSpreadViewportH(height);
-			}
-		};
-
-		syncViewportHeight();
-		const observer = new ResizeObserver(() => {
-			syncViewportHeight();
-		});
-		observer.observe(node);
-
-		return () => {
-			observer.disconnect();
-		};
-	}, [isViewingHistory, spreadLayout.rows, spreadSlotCount]);
-
-	const spreadWrapStyle = useMemo(() => {
-		if (spreadViewportH === null) {
-			return spreadStyle;
-		}
-
-		return {
-			...spreadStyle,
-			"--self-view-spread-measured-h": `${spreadViewportH}px`,
-		};
-	}, [spreadStyle, spreadViewportH]);
 	const spreadItems = useMemo((): Array<
 		| { kind: "card"; card: (typeof drawnCards)[number]; index: number }
 		| { kind: "placeholder"; index: number }
@@ -544,12 +285,15 @@ export function SelfViewDeckScreen() {
 	}, [drawnCards, pendingSlotIndex]);
 
 	const spreadRows = useMemo(() => {
+		const rows: (typeof spreadItems)[] = [];
 		let offset = 0;
-		return spreadLayout.rowSizes.map((rowSize) => {
-			const row = spreadItems.slice(offset, offset + rowSize);
+
+		for (const rowSize of spreadLayout.rowSizes) {
+			rows.push(spreadItems.slice(offset, offset + rowSize));
 			offset += rowSize;
-			return row;
-		});
+		}
+
+		return rows;
 	}, [spreadItems, spreadLayout.rowSizes]);
 
 	const isZoomActive =
@@ -559,16 +303,27 @@ export function SelfViewDeckScreen() {
 		(card: (typeof displayedCards)[number], index: number) => {
 			const isFaceUp = isViewingHistory || flippedIndices.has(index);
 			const isInFocus =
-				focusState?.index === index && focusState.phase !== "handoff";
+				focusState?.index === index &&
+				(focusState.phase === "zoomed" || focusState.phase === "closing");
+			const isFocusHandoff =
+				focusState?.index === index && focusState.phase === "handoff";
+
+			const cardClassName = [
+				isInFocus ? "tarot-card--in-focus" : "",
+				isFocusHandoff ? "tarot-card--focus-handoff" : "",
+			]
+				.filter(Boolean)
+				.join(" ");
 
 			return (
 				<TarotCard
 					key={`${card.id}-${index}`}
 					card={card}
 					index={index}
-					className={isInFocus ? "tarot-card--in-focus" : undefined}
+					className={cardClassName || undefined}
 					loadWhenVisible={isViewingHistory}
 					flipped={isFaceUp}
+					preloadFront={isFaceUp}
 					disableHoverPreview
 					uprightPreview={
 						reversedUprightHeld &&
@@ -583,8 +338,7 @@ export function SelfViewDeckScreen() {
 		},
 		[
 			flippedIndices,
-			focusState?.index,
-			focusState?.phase,
+			focusState,
 			handleCardPress,
 			isViewingHistory,
 			isZoomActive,
@@ -633,7 +387,7 @@ export function SelfViewDeckScreen() {
 							spreadLayout.rows > 0 ? spreadLayout.rows : undefined
 						}
 						data-layout-animating={layoutAnimating ? "true" : undefined}
-						style={spreadWrapStyle as CSSProperties}
+						style={spreadSurfaceStyle as CSSProperties}
 					>
 						<div
 							className="self-view-spread"
@@ -645,7 +399,7 @@ export function SelfViewDeckScreen() {
 							data-upright-held={
 								reversedUprightHeld && !isZoomActive ? "true" : undefined
 							}
-							style={spreadStyle as CSSProperties}
+							style={spreadSurfaceStyle as CSSProperties}
 						>
 							{isViewingHistory && displayedCards.length === 0 ? (
 								<p className="self-view-spread__empty">
@@ -683,30 +437,12 @@ export function SelfViewDeckScreen() {
 				/>
 			) : null}
 
-			{isViewingHistory ? (
-				<div className="self-view-draw-float">
-					<CloseButton
-						onClick={backToCurrent}
-						aria-label={labels.selfViewBackToCurrent}
-					/>
-				</div>
-			) : (
-				<div className="self-view-draw-float">
-					<GameButton
-						tone="light"
-						layout="text"
-						className="self-view-bottom-action"
-						onClick={drawOne}
-						onPointerEnter={warmNextDraw}
-						onFocus={warmNextDraw}
-						disabled={actionsDisabled}
-					>
-						{revealingIndex !== null
-							? labels.loading
-							: labels.selfViewDrawOne}
-					</GameButton>
-				</div>
-			)}
+			<SelfViewDrawBar
+				drawDisabled={drawDisabled}
+				isLoading={revealingIndex !== null}
+				onDraw={drawOne}
+				onWarmDraw={warmNextDraw}
+			/>
 		</>
 	);
 }

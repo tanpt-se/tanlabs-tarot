@@ -6,10 +6,24 @@ import {
 	shouldIgnoreAppShortcut,
 } from "../../lib/keyboard/app-shortcut";
 import { GameButton } from "../GameButton";
+import { CloseButton } from "../CloseButton";
 import { ConfirmModal } from "../modals/ConfirmModal";
 import { SelfViewHistoryButton } from "./SelfViewHistoryButton";
+import { SelfViewRestartButton } from "./SelfViewRestartButton";
 
-export function SelfViewTopActions() {
+type SelfViewDrawBarProps = {
+	drawDisabled: boolean;
+	isLoading: boolean;
+	onDraw: () => void;
+	onWarmDraw: () => void;
+};
+
+export function SelfViewDrawBar({
+	drawDisabled,
+	isLoading,
+	onDraw,
+	onWarmDraw,
+}: SelfViewDrawBarProps) {
 	const { labels } = useLocale();
 	const {
 		sessions,
@@ -18,6 +32,7 @@ export function SelfViewTopActions() {
 		hasOverlayOpen,
 		archiveCurrentSpread,
 		resetLiveSpread,
+		backToCurrent,
 	} = useSelfViewSession();
 	const [historyOpen, setHistoryOpen] = useState(false);
 	const [resetModalOpen, setResetModalOpen] = useState(false);
@@ -41,7 +56,7 @@ export function SelfViewTopActions() {
 		setHistoryOpen(true);
 	}, [hasOverlayOpen, historyOpen, sessions.length]);
 
-	const handleClearHotkey = useCallback(() => {
+	const handleRestartHotkey = useCallback(() => {
 		if (isAppShortcutBlocked(hasOverlayOpen)) return;
 		if (isViewingHistory || drawnCards.length === 0) return;
 
@@ -62,33 +77,51 @@ export function SelfViewTopActions() {
 
 			if (key === "c") {
 				event.preventDefault();
-				handleClearHotkey();
+				handleRestartHotkey();
 			}
 		};
 
 		document.addEventListener("keydown", onKeyDown);
 		return () => document.removeEventListener("keydown", onKeyDown);
-	}, [handleClearHotkey, handleHistoryHotkey]);
+	}, [handleHistoryHotkey, handleRestartHotkey]);
+
+	if (isViewingHistory) {
+		return (
+			<div className="self-view-draw-float">
+				<CloseButton
+					onClick={backToCurrent}
+					aria-label={labels.selfViewBackToCurrent}
+				/>
+			</div>
+		);
+	}
 
 	return (
 		<>
-			<div className="app-chrome__center self-view-top-actions">
+			<div className="self-view-draw-float">
 				{sessions.length > 0 ? (
 					<SelfViewHistoryButton
 						open={historyOpen}
 						onOpenChange={setHistoryOpen}
 					/>
-				) : null}
+				) : (
+					<span className="self-view-draw-side-spacer" aria-hidden />
+				)}
 				<GameButton
-					layout="nav"
-					tone="wood"
-					className="self-view-clear-button"
-					onClick={() => setResetModalOpen(true)}
-					disabled={isViewingHistory || drawnCards.length === 0}
-					aria-label={labels.selfViewClear}
+					tone="light"
+					layout="text"
+					className="self-view-bottom-action"
+					onClick={onDraw}
+					onPointerEnter={onWarmDraw}
+					onFocus={onWarmDraw}
+					disabled={drawDisabled}
 				>
-					<span className="game-button__label">{labels.selfViewClear}</span>
+					{isLoading ? labels.loading : labels.selfViewDrawOne}
 				</GameButton>
+				<SelfViewRestartButton
+					onClick={() => setResetModalOpen(true)}
+					disabled={drawnCards.length === 0}
+				/>
 			</div>
 
 			{resetModalOpen ? (

@@ -2,7 +2,6 @@ import { useLocale } from "../hooks/use-locale";
 import { BackButton } from "./BackButton";
 import { QuestionBar } from "./QuestionBar";
 import { SelfViewModeButton } from "./self-view/SelfViewModeButton";
-import { SelfViewTopActions } from "./self-view/SelfViewTopActions";
 import { HelpButton } from "./HelpButton";
 import { SettingsButton } from "./SettingsButton";
 
@@ -30,7 +29,7 @@ export function AppChrome({
 				{onBack ? <BackButton onClick={onBack} /> : null}
 			</div>
 			{variant === "minimal" ? (
-				<SelfViewTopActions />
+				<span className="app-chrome__grow" aria-hidden />
 			) : showQuestion ? (
 				<QuestionBar
 					label={labels.spreadYourQuestion}

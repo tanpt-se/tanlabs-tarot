@@ -40,7 +40,3 @@ export function createReading(question: string): Reading {
 		interpretation: null,
 	};
 }
-
-export function clearReadingHistory(): void {
-	localStorage.removeItem(STORAGE_KEY);
-}

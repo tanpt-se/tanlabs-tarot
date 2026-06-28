@@ -115,8 +115,7 @@
 	justify-self: end;
 }
 
-.app-chrome__center,
-.self-view-top-actions {
+.app-chrome__center {
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -2168,9 +2167,44 @@
 	display: flex;
 	align-items: stretch;
 	justify-content: center;
-	width: min(16rem, calc(100% - 2 * var(--frame-side)));
+	gap: 0.45rem;
+	width: min(24rem, calc(100% - 2 * var(--frame-side)));
 	transform: translateX(-50%);
 	pointer-events: auto;
+	--self-view-draw-bar-height: var(--game-menu-item-min-height);
+}
+
+.self-view-draw-float > .game-button {
+	height: var(--self-view-draw-bar-height);
+	min-height: var(--self-view-draw-bar-height);
+	max-height: var(--self-view-draw-bar-height);
+}
+
+.self-view-draw-float .game-button__frame {
+	height: 100%;
+	min-height: 0;
+	box-sizing: border-box;
+}
+
+.self-view-draw-float .self-view-draw-side-action {
+	flex: 0 0 auto;
+	width: var(--self-view-draw-bar-height);
+	min-width: var(--self-view-draw-bar-height);
+}
+
+.self-view-draw-side-action .game-button__frame {
+	padding: 0;
+}
+
+.self-view-draw-side-action .game-button__icon {
+	width: calc(var(--self-view-draw-bar-height) * 0.42);
+	height: calc(var(--self-view-draw-bar-height) * 0.42);
+}
+
+.self-view-draw-side-spacer {
+	flex: 0 0 auto;
+	width: var(--self-view-draw-bar-height);
+	min-width: var(--self-view-draw-bar-height);
 }
 
 .self-view-bottom-action {
@@ -2180,8 +2214,7 @@
 }
 
 .self-view-bottom-action .game-button__frame {
-	min-height: var(--game-menu-item-min-height);
-	padding: 0.85rem 1rem;
+	padding: 0 1rem;
 }
 
 .self-view-bottom-action .game-button__label {
@@ -2214,17 +2247,14 @@
 
 .self-view-spread-wrap[data-layout-animating="true"] {
 	overflow: visible;
-	clip-path: none;
 }
 
 .self-view-screen[data-layout-animating="true"] {
 	overflow: visible;
 }
 
-.game-stage:has(.self-view-screen[data-layout-animating="true"]) {
-	overflow: visible;
-}
-
+.app-screen:has(.self-view-screen[data-layout-animating="true"]),
+.game-stage:has(.self-view-screen[data-layout-animating="true"]),
 .game-stage:has(.self-view-screen[data-layout-animating="true"]) .game-stage__content {
 	overflow: visible;
 }
@@ -2292,17 +2322,20 @@
 	visibility: visible;
 }
 
-.self-view-spread .tarot-card--in-focus {
-	visibility: hidden;
-	pointer-events: none;
-}
 
 .self-view-card-slot {
 	visibility: hidden;
 	pointer-events: none;
-	flex: none;
-	width: var(--spread-card-width, var(--self-view-card-width));
-	aspect-ratio: var(--self-view-card-height-aspect, 1.72) / 1;
+}
+
+.self-view-card-slot .tarot-card__flip {
+	border: none;
+	background: transparent;
+	padding: 0;
+	pointer-events: none;
+	cursor: default;
+	display: block;
+	width: 100%;
 }
 
 .self-view-spread {
@@ -2387,12 +2420,37 @@
 	max-width: 100%;
 	--tarot-card-anim-pad: 0.35rem;
 	overflow: visible;
+	transition: opacity 0.28s ease;
+}
+
+.self-view-spread .tarot-card--in-focus {
+	opacity: 0;
+	pointer-events: none;
+}
+
+.self-view-spread .tarot-card--focus-handoff {
+	opacity: 1;
+	pointer-events: auto;
+	transition: none !important;
 }
 
 .self-view-spread .tarot-card[data-self-view-layout-anim="true"] {
 	z-index: 3;
-	will-change: transform;
 	pointer-events: none;
+	transition: none;
+	will-change: transform;
+	backface-visibility: hidden;
+	-webkit-backface-visibility: hidden;
+}
+
+.self-view-spread .tarot-card[data-self-view-layout-anim="true"] .tarot-card__deal {
+	opacity: 1;
+}
+
+.self-view-spread .tarot-card[data-self-view-layout-anim="true"] .tarot-card__face--front,
+.self-view-spread .tarot-card[data-self-view-layout-anim="true"] .tarot-card__face--front .card-frame,
+.self-view-spread .tarot-card[data-self-view-layout-anim="true"] .tarot-card__face--front .card-frame__image {
+	background: var(--card);
 }
 
 .self-view-spread .tarot-card[data-self-view-layout-anim="true"] .tarot-card__inner,
@@ -2451,11 +2509,6 @@
 
 .self-view-history-trigger {
 	flex: 0 0 auto;
-}
-
-.app-chrome .game-button--history {
-	width: auto;
-	min-width: var(--chrome-nav-button-width);
 }
 
 .self-view-history-drawer {
@@ -2640,8 +2693,9 @@
 	}
 
 	.self-view-draw-float {
-		width: min(calc(100% - 1.5rem), 16rem);
+		width: min(calc(100% - 1.5rem), 24rem);
 		bottom: calc(var(--frame-bottom) + 0.75rem);
+		gap: 0.35rem;
 	}
 }
 

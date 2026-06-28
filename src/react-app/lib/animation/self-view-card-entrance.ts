@@ -1,13 +1,17 @@
 import gsap from "gsap";
+import { didSelfViewLayoutResize } from "../self-view/spread-layout";
 import { GSAP_EASE_IN_OUT, GSAP_EASE_OUT } from "./constants";
 import { prefersReducedMotion } from "./reduced-motion";
 
-const SHIFT_DURATION_S = 0.5;
-const SHIFT_STAGGER_S = 0.03;
-const NEW_CARD_IN_PLACE_DURATION_S = 0.38;
-const ENTRANCE_START_SCALE = 0.9;
+/** Draw sequence: resize (if grid band changes) → shift → reveal → settle. */
+const LAYOUT_RESIZE_DURATION_S = 0.28;
+const SHIFT_MOVE_DURATION_S = 0.5;
+const NEW_CARD_REVEAL_DURATION_S = 0.35;
 
-export type ViewportPoint = {
+const POSITION_EPSILON_PX = 0.5;
+const SCALE_EPSILON = 0.02;
+
+type ViewportPoint = {
 	x: number;
 	y: number;
 };
@@ -15,14 +19,14 @@ export type ViewportPoint = {
 type ShiftPrep = {
 	dx: number;
 	dy: number;
-	scaleX: number;
-	scaleY: number;
+	scale: number;
 };
 
 export type SelfViewPreparedSlotReservation = {
 	shiftedCards: Map<number, ShiftPrep>;
 	slotIndex: number;
 	animatedElements: HTMLElement[];
+	layoutResized: boolean;
 };
 
 export type SelfViewSlotReservationHandle = {
@@ -37,9 +41,13 @@ export type SelfViewCardRevealHandle = {
 
 const tweenDefaults = {
 	transformOrigin: "50% 50%",
-	force3D: true,
-	autoRound: false,
+	force3D: false,
+	autoRound: true,
 } as const;
+
+function getMotionTarget(cardRoot: HTMLDivElement): HTMLElement {
+	return cardRoot;
+}
 
 function elementCenter(rect: DOMRect): ViewportPoint {
 	return {
@@ -49,20 +57,39 @@ function elementCenter(rect: DOMRect): ViewportPoint {
 }
 
 function markLayoutAnimating(element: HTMLElement, animating: boolean): void {
+	const root = element.closest<HTMLElement>(".tarot-card");
+	if (!root) return;
+
 	if (animating) {
-		element.setAttribute("data-self-view-layout-anim", "true");
+		root.setAttribute("data-self-view-layout-anim", "true");
 	} else {
-		element.removeAttribute("data-self-view-layout-anim");
+		root.removeAttribute("data-self-view-layout-anim");
 	}
 }
 
-function releaseCardMotion(element: HTMLElement): void {
+function resetMotionTarget(element: HTMLElement): void {
 	gsap.killTweensOf(element);
 	markLayoutAnimating(element, false);
-	gsap.set(element, { clearProps: "transform,opacity" });
+	gsap.set(element, { x: 0, y: 0, scale: 1, opacity: 1 });
 }
 
-function computeFlipDelta(
+function releaseCardMotion(element: HTMLElement): void {
+	resetMotionTarget(element);
+}
+
+function uniformScale(oldRect: DOMRect, current: DOMRect): number {
+	return Math.min(oldRect.width / current.width, oldRect.height / current.height);
+}
+
+function needsPositionShift(dx: number, dy: number): boolean {
+	return Math.abs(dx) >= POSITION_EPSILON_PX || Math.abs(dy) >= POSITION_EPSILON_PX;
+}
+
+function needsScaleShift(scale: number): boolean {
+	return Math.abs(scale - 1) >= SCALE_EPSILON;
+}
+
+function computeShiftPrep(
 	element: HTMLElement,
 	oldRect: DOMRect,
 ): ShiftPrep | null {
@@ -73,55 +100,88 @@ function computeFlipDelta(
 	const newCenter = elementCenter(current);
 	const dx = oldCenter.x - newCenter.x;
 	const dy = oldCenter.y - newCenter.y;
-	const scaleX = oldRect.width / current.width;
-	const scaleY = oldRect.height / current.height;
+	const scale = uniformScale(oldRect, current);
 
 	if (
-		Math.abs(dx) < 0.5 &&
-		Math.abs(dy) < 0.5 &&
-		Math.abs(scaleX - 1) < 0.02 &&
-		Math.abs(scaleY - 1) < 0.02
+		!needsPositionShift(dx, dy) &&
+		!needsScaleShift(scale)
 	) {
 		return null;
 	}
 
-	return { dx, dy, scaleX, scaleY };
+	return { dx, dy, scale };
 }
 
 export function captureSelfViewCardRects(
 	cardRoots: Map<number, HTMLDivElement>,
 ): Map<number, DOMRect> {
 	const map = new Map<number, DOMRect>();
-	cardRoots.forEach((element, index) => {
-		map.set(index, DOMRect.fromRect(element.getBoundingClientRect()));
+	cardRoots.forEach((root, index) => {
+		const target = getMotionTarget(root);
+		map.set(index, DOMRect.fromRect(target.getBoundingClientRect()));
 	});
 	return map;
 }
 
-/** Phase 1 — shift existing cards into the layout that reserves the next slot. */
+/** Target card width after layout reflow — used to lock size for the draw sequence. */
+export function measureSelfViewSlotCardWidthPx(
+	cardRoots: Map<number, HTMLDivElement>,
+	slotIndex: number,
+): number | null {
+	const root = cardRoots.get(slotIndex);
+	if (!root) return null;
+
+	const target = getMotionTarget(root);
+	const width = target.getBoundingClientRect().width;
+	return width > 0 ? width : null;
+}
+
+export function releaseSelfViewLayoutMotion(
+	elements: Iterable<HTMLElement>,
+): void {
+	for (const element of elements) {
+		releaseCardMotion(element);
+	}
+}
+
+/** Shift existing cards into the layout that reserves the next slot. */
 export function prepareSelfViewSlotReservation(options: {
 	cardRoots: Map<number, HTMLDivElement>;
 	slotIndex: number;
 	oldCardRects: Map<number, DOMRect>;
+	previousCount: number;
+	nextCount: number;
 }): SelfViewPreparedSlotReservation | null {
 	if (prefersReducedMotion()) {
 		return null;
 	}
 
-	const { cardRoots, slotIndex, oldCardRects } = options;
+	const { cardRoots, slotIndex, oldCardRects, previousCount, nextCount } =
+		options;
 	if (!cardRoots.has(slotIndex)) return null;
 
+	const layoutResized = didSelfViewLayoutResize(previousCount, nextCount);
 	const shiftedCards = new Map<number, ShiftPrep>();
 	const animatedElements: HTMLElement[] = [];
 
 	for (let index = 0; index < slotIndex; index += 1) {
-		const element = cardRoots.get(index);
+		const root = cardRoots.get(index);
 		const oldRect = oldCardRects.get(index);
-		if (!element || !oldRect) continue;
+		if (!root || !oldRect) continue;
 
-		const delta = computeFlipDelta(element, oldRect);
+		const element = getMotionTarget(root);
+		const delta = computeShiftPrep(element, oldRect);
 		if (!delta) {
-			releaseCardMotion(element);
+			resetMotionTarget(element);
+			continue;
+		}
+
+		const shouldAnimate =
+			needsPositionShift(delta.dx, delta.dy) ||
+			needsScaleShift(delta.scale);
+
+		if (!shouldAnimate) {
+			resetMotionTarget(element);
 			continue;
 		}
 
@@ -129,16 +189,19 @@ export function prepareSelfViewSlotReservation(options: {
 		animatedElements.push(element);
 		gsap.killTweensOf(element);
 		markLayoutAnimating(element, true);
+
+		const startScale = needsScaleShift(delta.scale) ? delta.scale : 1;
+
 		gsap.set(element, {
 			...tweenDefaults,
+			opacity: 1,
 			x: delta.dx,
 			y: delta.dy,
-			scaleX: delta.scaleX,
-			scaleY: delta.scaleY,
+			scale: startScale,
 		});
 	}
 
-	return { shiftedCards, slotIndex, animatedElements };
+	return { shiftedCards, slotIndex, animatedElements, layoutResized };
 }
 
 export function playSelfViewSlotReservation(
@@ -154,12 +217,9 @@ export function playSelfViewSlotReservation(
 	}
 
 	const { cardRoots, onComplete } = options;
-	const { shiftedCards, slotIndex, animatedElements } = prepared;
+	const { shiftedCards, slotIndex, layoutResized } = prepared;
 
 	const finish = () => {
-		for (const element of animatedElements) {
-			releaseCardMotion(element);
-		}
 		requestAnimationFrame(() => {
 			onComplete?.();
 		});
@@ -171,76 +231,52 @@ export function playSelfViewSlotReservation(
 	}
 
 	const tl = gsap.timeline({ onComplete: finish });
-	let staggerIndex = 0;
 
-	shiftedCards.forEach((_delta, index) => {
-		const element = cardRoots.get(index);
-		if (!element) return;
+	shiftedCards.forEach((delta, index) => {
+		const root = cardRoots.get(index);
+		if (!root) return;
 
-		tl.to(
-			element,
-			{
-				x: 0,
-				y: 0,
-				scaleX: 1,
-				scaleY: 1,
-				duration: SHIFT_DURATION_S,
-				ease: GSAP_EASE_IN_OUT,
-				overwrite: "auto",
-				...tweenDefaults,
-			},
-			staggerIndex * SHIFT_STAGGER_S,
-		);
-		staggerIndex += 1;
+		const element = getMotionTarget(root);
+		const needsMove = needsPositionShift(delta.dx, delta.dy);
+		const needsResize =
+			layoutResized && needsScaleShift(delta.scale);
+		const needsScaleSnap =
+			!layoutResized && needsScaleShift(delta.scale);
+
+		// Step 1 — shrink to new grid size (all cards together, position held).
+		if (needsResize) {
+			tl.to(
+				element,
+				{
+					scale: 1,
+					duration: LAYOUT_RESIZE_DURATION_S,
+					ease: GSAP_EASE_OUT,
+					overwrite: "auto",
+					...tweenDefaults,
+				},
+				0,
+			);
+		}
+
+		// Step 2 — move into slot (all cards together, scale locked at 1).
+		if (needsMove || needsScaleSnap) {
+			tl.to(
+				element,
+				{
+					x: 0,
+					y: 0,
+					scale: 1,
+					duration: SHIFT_MOVE_DURATION_S,
+					ease: GSAP_EASE_IN_OUT,
+					overwrite: "auto",
+					...tweenDefaults,
+				},
+				needsResize ? LAYOUT_RESIZE_DURATION_S : 0,
+			);
+		}
 	});
 
 	return { timeline: tl, slotIndex };
-}
-
-/** Phase 2 — reveal card in place at its reserved slot (no fly-in from elsewhere). */
-export function playSelfViewCardInPlaceReveal(options: {
-	cardRoot: HTMLElement;
-	cardIndex: number;
-	onComplete?: () => void;
-}): SelfViewCardRevealHandle | null {
-	if (prefersReducedMotion()) {
-		options.onComplete?.();
-		return null;
-	}
-
-	const { cardRoot, cardIndex, onComplete } = options;
-	const rect = cardRoot.getBoundingClientRect();
-	if (rect.width <= 0 || rect.height <= 0) {
-		onComplete?.();
-		return null;
-	}
-
-	gsap.killTweensOf(cardRoot);
-	markLayoutAnimating(cardRoot, true);
-	gsap.set(cardRoot, {
-		...tweenDefaults,
-		scaleX: ENTRANCE_START_SCALE,
-		scaleY: ENTRANCE_START_SCALE,
-		opacity: 0,
-	});
-
-	const tween = gsap.to(cardRoot, {
-		scaleX: 1,
-		scaleY: 1,
-		opacity: 1,
-		duration: NEW_CARD_IN_PLACE_DURATION_S,
-		ease: GSAP_EASE_OUT,
-		overwrite: "auto",
-		...tweenDefaults,
-		onComplete: () => {
-			releaseCardMotion(cardRoot);
-			requestAnimationFrame(() => {
-				onComplete?.();
-			});
-		},
-	});
-
-	return { timeline: tween, cardIndex };
 }
 
 export function killSelfViewSlotReservation(
@@ -250,17 +286,67 @@ export function killSelfViewSlotReservation(
 	if (!handle) return;
 	handle.timeline.kill();
 	for (const element of animatedElements) {
-		releaseCardMotion(element);
+		resetMotionTarget(element);
 	}
+}
+
+/** Step 3 — new card at full opacity (card back visible, no white flash). */
+export function prepareSelfViewCardInPlaceReveal(
+	cardRoot: HTMLDivElement,
+): HTMLElement | null {
+	if (prefersReducedMotion()) {
+		return null;
+	}
+
+	const element = getMotionTarget(cardRoot);
+	const currentRect = element.getBoundingClientRect();
+	if (currentRect.width <= 0 || currentRect.height <= 0) {
+		return null;
+	}
+
+	gsap.killTweensOf(element);
+	markLayoutAnimating(element, true);
+	gsap.set(element, {
+		...tweenDefaults,
+		x: 0,
+		y: 0,
+		scale: 1,
+		opacity: 1,
+	});
+
+	return element;
+}
+
+/** Brief settle beat — no opacity fade (avoids white gap under card). */
+export function playSelfViewCardInPlaceReveal(options: {
+	cardRoot: HTMLDivElement;
+	cardIndex: number;
+	onComplete?: () => void;
+}): SelfViewCardRevealHandle | null {
+	if (prefersReducedMotion()) {
+		options.onComplete?.();
+		return null;
+	}
+
+	const { cardIndex, onComplete } = options;
+
+	const tween = gsap.delayedCall(NEW_CARD_REVEAL_DURATION_S, () => {
+		requestAnimationFrame(() => {
+			onComplete?.();
+		});
+	});
+
+	return { timeline: tween, cardIndex };
 }
 
 export function killSelfViewCardInPlaceReveal(
 	handle: SelfViewCardRevealHandle | null,
-	cardRoot: HTMLElement | null,
+	cardRoot: HTMLDivElement | null,
 ): void {
 	if (!handle) return;
 	handle.timeline.kill();
 	if (cardRoot) {
-		releaseCardMotion(cardRoot);
+		const element = getMotionTarget(cardRoot);
+		resetMotionTarget(element);
 	}
 }

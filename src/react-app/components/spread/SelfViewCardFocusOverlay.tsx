@@ -66,8 +66,10 @@ export const SelfViewCardFocusOverlay = forwardRef<
 		const closeOrigin = getCloseOrigin();
 		await animateCardFocusOut(shellRef.current, closeOrigin);
 
-		onHandoff();
 		hideCardFocusShell(shellRef.current);
+		await waitForPaint();
+
+		onHandoff();
 		await waitForPaint();
 		onClosed();
 	}, [getCloseOrigin, onClosed, onClosingStart, onHandoff]);
@@ -91,6 +93,7 @@ export const SelfViewCardFocusOverlay = forwardRef<
 
 		shell.style.visibility = "visible";
 		shell.style.pointerEvents = "auto";
+		shell.style.opacity = "1";
 		applyCardFocusStartPose(shell, origin);
 		setPoseReady(true);
 

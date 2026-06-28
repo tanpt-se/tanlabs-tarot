@@ -1,8 +1,7 @@
 export const SELF_VIEW_MAX_SPREAD_CARDS = 10;
-export const SELF_VIEW_MIN_CARDS_FOR_ZOOM = 5;
 
 export function canSelfViewZoom(cardCount: number): boolean {
-	return cardCount >= SELF_VIEW_MIN_CARDS_FOR_ZOOM;
+	return cardCount >= 1;
 }
 
 export type SelfViewSpreadLayout = {
@@ -101,6 +100,23 @@ export function getSelfViewSpreadLayout(cardCount: number): SelfViewSpreadLayout
 	};
 }
 
+/** True when adding a card crosses a layout band (rows / scale / row width). */
+export function didSelfViewLayoutResize(
+	previousCount: number,
+	nextCount: number,
+): boolean {
+	if (previousCount <= 0 || nextCount <= 0) return false;
+
+	const prev = getSelfViewSpreadLayout(previousCount);
+	const next = getSelfViewSpreadLayout(nextCount);
+
+	return (
+		prev.cardScale !== next.cardScale ||
+		prev.rows !== next.rows ||
+		prev.sizingRowWidth !== next.sizingRowWidth
+	);
+}
+
 export function getSelfViewSpreadStyle(
 	layout: SelfViewSpreadLayout,
 ): Record<string, string | number> {
@@ -162,7 +178,7 @@ function getSelfViewSpreadContainerWidthPx(
 }
 
 /** Matches `.self-view-spread` card width for a given spread count. */
-export function getSelfViewCardWidthPx(
+function getSelfViewCardWidthPx(
 	layout: SelfViewSpreadLayout,
 	options?: SelfViewCardWidthOptions,
 ): number {
@@ -251,7 +267,7 @@ export function getSelfViewCardWidthPx(
 }
 
 /** Layout for zoom target: one hero card centered on the viewport. */
-export const SELF_VIEW_FOCUS_CARD_LAYOUT: SelfViewSpreadLayout = {
+const SELF_VIEW_FOCUS_CARD_LAYOUT: SelfViewSpreadLayout = {
 	rowWidth: 1,
 	sizingRowWidth: 1,
 	rows: 1,

@@ -21,13 +21,8 @@ export function freezeCardFocusRect(rect: DOMRectReadOnly): CardFocusRect {
 }
 
 /** Fixed zoom width — same as a lone card in the spread. */
-export function getSelfViewFocusTargetWidth(): number {
+function getSelfViewFocusTargetWidth(): number {
 	return getSelfViewSingleCardWidth();
-}
-
-export function getSelfViewFocusZoomScale(originWidth: number): number {
-	if (originWidth <= 0) return 1;
-	return getSelfViewFocusTargetWidth() / originWidth;
 }
 
 function getCenterMotion(origin: CardFocusRect) {
@@ -60,7 +55,7 @@ export function applyCardFocusStartPose(
 	});
 }
 
-export function applyCardFocusEndPose(
+function applyCardFocusEndPose(
 	target: HTMLElement,
 	origin: CardFocusRect,
 ): void {
@@ -145,6 +140,7 @@ export function animateCardFocusOut(
 
 export function hideCardFocusShell(target: HTMLElement): void {
 	gsap.killTweensOf(target);
+	gsap.set(target, { opacity: 0 });
 	target.style.visibility = "hidden";
 	target.style.pointerEvents = "none";
 }

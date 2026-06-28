@@ -1,8 +1,8 @@
-export type ReadingStatus = "pending" | "drawing" | "interpreting" | "complete";
+type ReadingStatus = "pending" | "drawing" | "interpreting" | "complete";
 
 export type SpreadType = "single" | "three" | "six";
 
-export type CardArcana = "major" | "minor";
+type CardArcana = "major" | "minor";
 
 export interface DrawnCard {
 	id: string;
