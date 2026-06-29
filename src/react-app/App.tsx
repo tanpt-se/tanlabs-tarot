@@ -1,74 +1,116 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, startTransition } from "react";
 import { AnimatePresence } from "framer-motion";
-import { AppLoadingOverlay } from "./components/AppLoadingOverlay";
 import { HomeTableBackdrop } from "./components/home/HomeTableBackdrop";
 import { HomeScreen } from "./components/home/HomeScreen";
 import { SettingsModal } from "./components/settings/SettingsModal";
 import { SelfViewShell } from "./components/spread/SelfViewShell";
 import { SpreadScreen } from "./components/spread/SpreadScreen";
-import { useGameScreen } from "./hooks/use-game-screen";
+import { useGameScreen, type AppScreen } from "./hooks/use-game-screen";
 import { useReadingHistory } from "./hooks/use-reading-history";
 import { useSelfView } from "./hooks/use-self-view";
 import { GUIDED_READING_ENABLED } from "./lib/features/guided-reading";
+import { resolveGuidedReadingRestore } from "./lib/storage/guided-reading-session-store";
 import { ScreenTransition } from "./components/motion/screen-motion";
 import { SelfViewSessionProvider } from "./providers/self-view-session-provider";
 import type { Reading } from "./lib/types/reading";
 import "./App.css";
 
-const NAVIGATION_DELAY_MS = 300;
+function resolveInitialGuidedState(readings: Reading[]): {
+	screen: AppScreen;
+	readingId: string;
+} {
+	if (!GUIDED_READING_ENABLED) {
+		return { screen: "home", readingId: "" };
+	}
+
+	const restored = resolveGuidedReadingRestore(readings);
+	if (!restored) {
+		return { screen: "home", readingId: "" };
+	}
+
+	return { screen: "reading", readingId: restored.readingId };
+}
 
 function App() {
-	const { readings, beginSession, updateReading } = useReadingHistory();
-	const [session, setSession] = useState<Reading>(() => beginSession());
+	const { readings, beginSession, updateReading, clearHistory } = useReadingHistory();
+	const initialGuided = useMemo(
+		() => resolveInitialGuidedState(readings),
+		// eslint-disable-next-line react-hooks/exhaustive-deps -- bootstrap from first persisted load only
+		[],
+	);
 
 	const {
 		screen,
 		readingId,
 		goHome,
 		startReading,
-		goToReading,
 		isSettingsOpen,
 		openSettings,
 		closeSettings,
-	} = useGameScreen(session.id);
+	} = useGameScreen(initialGuided);
 
 	const { enabled: selfView, setEnabled: setSelfView } = useSelfView();
 
-	const activeReading =
-		readings.find((reading) => reading.id === readingId) ?? session;
+	const activeReading = readings.find((reading) => reading.id === readingId);
+	const completedReadings = useMemo(
+		() => readings.filter((reading) => reading.status === "complete"),
+		[readings],
+	);
 
-	const handleNewSession = useCallback(() => {
-		const reading = beginSession();
-		setSession(reading);
-		return reading;
-	}, [beginSession]);
+	const handleNewSession = useCallback(() => beginSession(), [beginSession]);
 
 	const handleStartGuidedReading = useCallback(() => {
 		if (!GUIDED_READING_ENABLED) return;
 
 		const reading = handleNewSession();
-		startReading(reading.id);
+		startTransition(() => {
+			startReading(reading.id);
+		});
 	}, [handleNewSession, startReading]);
+
+	const handleSelectHistoryReading = useCallback(
+		(id: string) => {
+			startReading(id);
+		},
+		[startReading],
+	);
 
 	const handleStartSelfView = useCallback(() => {
 		setSelfView(true);
 	}, [setSelfView]);
 
-	const [isNavigating, setIsNavigating] = useState(false);
-
-	const handleViewReading = useCallback(
-		(id: string) => {
-			if (!GUIDED_READING_ENABLED) return;
-			if (isNavigating || id === readingId) return;
-
-			setIsNavigating(true);
-			window.setTimeout(() => {
-				goToReading(id);
-				setIsNavigating(false);
-			}, NAVIGATION_DELAY_MS);
-		},
-		[goToReading, isNavigating, readingId],
+	const [readingEntranceReady, setReadingEntranceReady] = useState(
+		() => initialGuided.screen === "reading",
 	);
+	const skipEntranceDelayRef = useRef(initialGuided.screen === "reading");
+
+	useEffect(() => {
+		if (screen !== "reading") {
+			setReadingEntranceReady(false);
+			return;
+		}
+
+		if (skipEntranceDelayRef.current) {
+			skipEntranceDelayRef.current = false;
+			setReadingEntranceReady(true);
+			return;
+		}
+
+		setReadingEntranceReady(false);
+		const fallback = window.setTimeout(() => {
+			setReadingEntranceReady(true);
+		}, 480);
+
+		return () => {
+			window.clearTimeout(fallback);
+		};
+	}, [screen, readingId]);
+
+	useEffect(() => {
+		if (screen === "reading" && !activeReading) {
+			goHome();
+		}
+	}, [activeReading, goHome, screen]);
 
 	const handleSelfViewBack = useCallback(() => {
 		setSelfView(false);
@@ -78,14 +120,6 @@ function App() {
 	const handleGoHome = useCallback(() => {
 		goHome();
 	}, [goHome]);
-
-	const completedReadings = useMemo(
-		() =>
-			[...readings]
-				.filter((reading) => reading.status === "complete")
-				.reverse(),
-		[readings],
-	);
 
 	return (
 		<SelfViewSessionProvider>
@@ -121,38 +155,33 @@ function App() {
 									isSettingsOpen={isSettingsOpen}
 								/>
 							</ScreenTransition>
-						) : GUIDED_READING_ENABLED ? (
-							<ScreenTransition key={`reading-${readingId}`} className="app-screen">
+						) : activeReading ? (
+							<ScreenTransition
+								key={`reading-${readingId}`}
+								variant="self-view"
+								className="app-screen"
+								onEntered={() => setReadingEntranceReady(true)}
+							>
 								<SpreadScreen
 									reading={activeReading}
 									completedReadings={completedReadings}
 									onUpdate={updateReading}
 									onBack={handleGoHome}
-									onGoHome={handleGoHome}
-									onViewReading={handleViewReading}
+									onSelectHistoryReading={handleSelectHistoryReading}
+									onClearReadingHistory={clearHistory}
 									onSettings={openSettings}
-									isNavigating={isNavigating}
-								/>
-							</ScreenTransition>
-						) : (
-							<ScreenTransition key="home-fallback" variant="home" className="app-screen">
-								<HomeScreen
-									onSelfView={handleStartSelfView}
-									onGuidedReading={handleStartGuidedReading}
-									onOpenSettings={openSettings}
-									onCloseSettings={closeSettings}
 									isSettingsOpen={isSettingsOpen}
+									onCloseSettings={closeSettings}
+									entranceReady={readingEntranceReady}
 								/>
 							</ScreenTransition>
-						)}
+						) : null}
 					</AnimatePresence>
 
 					{isSettingsOpen ? (
 					<SettingsModal key="settings-modal" onClose={closeSettings} />
 				) : null}
 				</main>
-
-				{isNavigating ? <AppLoadingOverlay /> : null}
 			</div>
 		</SelfViewSessionProvider>
 	);

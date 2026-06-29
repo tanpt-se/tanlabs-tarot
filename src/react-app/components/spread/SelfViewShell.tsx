@@ -6,12 +6,13 @@ import { useSfx } from "../../hooks/use-sfx";
 import { useSelfViewSession } from "../../hooks/use-self-view-session";
 import { isAppShortcutBlocked } from "../../lib/keyboard/app-shortcut";
 import { AppChrome } from "../AppChrome";
+import { HistoryButton } from "../HistoryButton";
 import { GameToast } from "../GameToast";
 import { GameStage } from "../character/GameStage";
 import { ConfirmModal } from "../modals/ConfirmModal";
 import { SelfViewDeckScreen } from "./SelfViewDeckScreen";
 import { SelfViewDrawBar } from "../self-view/SelfViewDrawBar";
-import { HelpModal } from "../help/HelpModal";
+import { SelfViewHistoryModal } from "../self-view/SelfViewHistoryModal";
 import { SELF_VIEW_MAX_SPREAD_CARDS } from "../../lib/self-view/spread-layout";
 import { preloadTopOfDeck } from "../../lib/tarot/card-image";
 
@@ -31,6 +32,7 @@ export function SelfViewShell({
 	const { labels } = useLocale();
 	const { enabled, toggle: toggleMusic } = useBackgroundMusic();
 	const {
+		sessions,
 		drawnCards,
 		archiveAndResetLiveSpread,
 		hasOverlayOpen,
@@ -39,7 +41,7 @@ export function SelfViewShell({
 	} = useSelfViewSession();
 	const { playFlip, playCardDeal } = useSfx();
 	const [exitModalOpen, setExitModalOpen] = useState(false);
-	const [helpOpen, setHelpOpen] = useState(false);
+	const [historyOpen, setHistoryOpen] = useState(false);
 	const dealOriginRef = useRef<HTMLButtonElement>(null);
 	const [muteToast, setMuteToast] = useState<{
 		id: number;
@@ -54,17 +56,6 @@ export function SelfViewShell({
 		toggleMusic();
 	}, [enabled, labels.musicMutedToast, labels.musicUnmutedToast, toggleMusic]);
 
-	const handleHelpHotkey = useCallback(() => {
-		if (helpOpen) {
-			setHelpOpen(false);
-			return;
-		}
-
-		if (isAppShortcutBlocked(hasOverlayOpen)) return;
-
-		setHelpOpen(true);
-	}, [hasOverlayOpen, helpOpen]);
-
 	const handleSettingsHotkey = useCallback(() => {
 		if (isSettingsOpen) {
 			onCloseSettings();
@@ -76,9 +67,22 @@ export function SelfViewShell({
 		onSettings();
 	}, [hasOverlayOpen, isSettingsOpen, onCloseSettings, onSettings]);
 
+	const handleHistoryHotkey = useCallback(() => {
+		if (sessions.length === 0) return;
+
+		if (historyOpen) {
+			setHistoryOpen(false);
+			return;
+		}
+
+		if (isAppShortcutBlocked(hasOverlayOpen)) return;
+
+		setHistoryOpen(true);
+	}, [hasOverlayOpen, historyOpen, sessions.length]);
+
 	useAppChromeShortcuts({
-		onHelp: handleHelpHotkey,
 		onSettings: handleSettingsHotkey,
+		onHistory: sessions.length > 0 ? handleHistoryHotkey : undefined,
 		onMute: handleMuteHotkey,
 	});
 
@@ -120,10 +124,13 @@ export function SelfViewShell({
 		<>
 			<div className="self-view-shell">
 				<AppChrome
-					variant="minimal"
 					onSettings={onSettings}
-					onHelp={() => setHelpOpen(true)}
 					onBack={handleBackRequest}
+					history={
+						sessions.length > 0 ? (
+							<HistoryButton onClick={() => setHistoryOpen(true)} />
+						) : null
+					}
 				/>
 				<GameStage layout="full">
 					<SelfViewDeckScreen />
@@ -136,9 +143,10 @@ export function SelfViewShell({
 				/>
 			</div>
 
-			{helpOpen ? (
-				<HelpModal onClose={() => setHelpOpen(false)} />
-			) : null}
+			<SelfViewHistoryModal
+				open={historyOpen}
+				onOpenChange={setHistoryOpen}
+			/>
 
 			{exitModalOpen ? (
 				<ConfirmModal

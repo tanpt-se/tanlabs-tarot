@@ -35,6 +35,9 @@
 	--ring: var(--palette-ink);
 	--font-size-root: 16px;
 	--font-family: "Fredoka", "Nunito", system-ui, sans-serif;
+	--shell-text-size: 1.0625rem;
+	--shell-text-line-height: 1.5;
+	--guided-shell-max: 980px;
 	--font-weight-regular: 500;
 	--font-weight-semibold: 600;
 	--font-weight-bold: 700;
@@ -66,6 +69,10 @@
 	--game-btn-outer-active:
 		0 2px 0 rgba(142, 92, 51, 0.34),
 		0 4px 10px rgba(74, 44, 20, 0.12);
+	--game-btn-outer-hover:
+		0 7px 0 var(--game-btn-shadow-rim),
+		0 12px 22px var(--game-btn-shadow-soft),
+		0 2px 4px rgba(0, 0, 0, 0.06);
 	--game-btn-text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
 	--game-btn-shine: linear-gradient(
 		180deg,
@@ -88,6 +95,10 @@
 	--game-btn-wood-outer-active:
 		0 2px 0 rgba(74, 44, 20, 0.38),
 		0 4px 10px rgba(40, 22, 8, 0.14);
+	--game-btn-wood-outer-hover:
+		0 7px 0 var(--game-btn-wood-shadow-rim),
+		0 12px 22px var(--game-btn-wood-shadow-soft),
+		0 2px 4px rgba(0, 0, 0, 0.07);
 	--game-btn-wood-text: #fff6e8;
 	--game-btn-wood-inset:
 		inset 0 2px 0 rgba(255, 235, 200, 0.45),
@@ -126,11 +137,14 @@
 	--game-menu-item-min-height: 4.15rem;
 	--game-menu-item-label-size: 1.3rem;
 
-	--home-menu-width: min(26rem, 92vw);
-	--home-menu-panel-padding: 2rem;
-	--home-menu-item-label-size: 1.15rem;
-	--home-menu-item-gap: 0.65rem;
-	--home-menu-item-min-height: 3.6rem;
+	--home-menu-width: min(19.5rem, 86vw);
+	--home-menu-panel-padding: 1.15rem 1.25rem;
+	--home-menu-item-label-size: 1.12rem;
+	--home-menu-item-gap: 0.45rem;
+	--home-menu-item-min-height: 3.1rem;
+	--home-menu-extra-gap: 0.4rem;
+	--home-menu-extra-min-height: 2.95rem;
+	--home-menu-extra-label-size: 0.92rem;
 	--home-playfield-inset-x: clamp(1rem, 4vw, 1.5rem);
 	--frame-side: 1rem;
 	--frame-top: var(--frame-side);
@@ -138,8 +152,9 @@
 
 	--game-modal-width: 28rem;
 	--game-modal-height: 32rem;
-	--self-view-history-modal-height: min(50rem,
-			calc(100vh - var(--frame-top) - var(--frame-bottom) - 2rem));
+	--self-view-history-modal-height: calc(
+		100dvh - var(--frame-top) - var(--frame-bottom) - 2rem
+	);
 	--self-view-history-item-height: 3.5rem;
 	--self-view-history-list-capacity: 5;
 	--game-modal-title-size: 1.3rem;

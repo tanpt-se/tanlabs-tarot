@@ -3,10 +3,13 @@ import { useBackgroundMusic } from "../../hooks/use-background-music";
 import { useAppChromeShortcuts } from "../../hooks/use-app-chrome-shortcuts";
 import { useLocale } from "../../hooks/use-locale";
 import { HOME_LOGO } from "../../assets";
-import { GUIDED_READING_ENABLED } from "../../lib/features/guided-reading";
 import { isGameModalOpen } from "../../lib/keyboard/app-shortcut";
 import { AboutModal } from "../about/AboutModal";
 import { ShopModal } from "../shop/ShopModal";
+import { AboutIcon } from "../icons/AboutIcon";
+import { CartIcon } from "../icons/CartIcon";
+import { HelpIcon } from "../icons/HelpIcon";
+import { SettingsMenuIcon } from "../icons/SettingsMenuIcon";
 import { GameToast } from "../GameToast";
 import { StaggerFadeIn } from "../motion/screen-motion";
 import { GameMenu } from "../menu/GameMenu";
@@ -101,31 +104,46 @@ export function HomeScreen({
 							<GameMenu variant="primary" aria-label={labels.homeNavLabel}>
 								<GameMenuItem
 									label={labels.homeAiReader}
-									disabled={!GUIDED_READING_ENABLED}
-									title={
-										GUIDED_READING_ENABLED ? undefined : labels.guidedReadingComingSoon
-									}
 									onClick={onGuidedReading}
 								/>
 								<GameMenuItem
 									label={labels.homeSelfView}
 									onClick={onSelfView}
 								/>
-								<GameMenuItem
-									label={labels.homeShop}
-									featured
-									onClick={() => setShopOpen(true)}
-								/>
-								<GameMenuItem
-									label={labels.homeSettings}
-									featured
-									onClick={onOpenSettings}
-								/>
-								<GameMenuItem
-									label={labels.homeAbout}
-									featured
-									onClick={() => setAboutOpen(true)}
-								/>
+								<div
+									className="home-menu__extras"
+									role="group"
+									aria-label={labels.homeMoreLabel}
+								>
+									<GameMenuItem
+										label={labels.homeShop}
+										featured
+										compact
+										icon={<CartIcon className="game-button__icon" />}
+										onClick={() => setShopOpen(true)}
+									/>
+									<GameMenuItem
+										label={labels.homeSettings}
+										featured
+										compact
+										icon={<SettingsMenuIcon />}
+										onClick={onOpenSettings}
+									/>
+									<GameMenuItem
+										label={labels.openHelp}
+										featured
+										compact
+										icon={<HelpIcon />}
+										onClick={() => setHelpOpen(true)}
+									/>
+									<GameMenuItem
+										label={labels.homeAbout}
+										featured
+										compact
+										icon={<AboutIcon />}
+										onClick={() => setAboutOpen(true)}
+									/>
+								</div>
 							</GameMenu>
 						</div>
 					</div>

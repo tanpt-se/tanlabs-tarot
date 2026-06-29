@@ -29,7 +29,7 @@ export function NarratorAdvanceButton({
 			tone="light"
 			code={code}
 			sublabel={useStack ? labels.buttonEnscribe : undefined}
-			className="narrator-bar__advance"
+			className="guided-narrator__advance"
 			onClick={onClick}
 			disabled={disabled}
 			aria-label={label}

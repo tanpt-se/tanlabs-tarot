@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { useContext, useEffect, useRef, type ReactNode } from "react";
+import { useContext, useEffect, useRef, type HTMLAttributes, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import {
 	gameModalOverlayMotion,
@@ -8,7 +8,7 @@ import {
 	gameModalPanelTransition,
 } from "../motion/screen-motion";
 import { SelfViewSessionContext } from "../../providers/self-view-session-context";
-import { GamePanel, type GamePanelProps } from "../GamePanel";
+import { GamePanel } from "../GamePanel";
 
 const MotionGamePanel = motion.create(GamePanel);
 
@@ -24,9 +24,9 @@ type GameModalFrameProps = {
 	panelClassName?: string;
 	panelSurfaceClassName?: string;
 	children: ReactNode;
-	panelProps?: Omit<
-		GamePanelProps,
-		"children" | "className" | "surfaceClassName" | "onClick"
+	panelProps?: Pick<
+		HTMLAttributes<HTMLElement>,
+		"aria-labelledby" | "aria-label" | "aria-describedby"
 	>;
 };
 

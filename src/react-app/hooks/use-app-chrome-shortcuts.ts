@@ -2,13 +2,15 @@ import { useEffect } from "react";
 import { shouldIgnoreAppShortcut } from "../lib/keyboard/app-shortcut";
 
 interface AppChromeShortcutHandlers {
-	onHelp: () => void;
+	onHelp?: () => void;
+	onHistory?: () => void;
 	onSettings: () => void;
 	onMute: () => void;
 }
 
 export function useAppChromeShortcuts({
 	onHelp,
+	onHistory,
 	onSettings,
 	onMute,
 }: AppChromeShortcutHandlers) {
@@ -18,9 +20,15 @@ export function useAppChromeShortcuts({
 
 			const key = event.key.toLowerCase();
 
-			if (key === "i") {
+			if (key === "i" && onHelp) {
 				event.preventDefault();
 				onHelp();
+				return;
+			}
+
+			if (key === "h" && onHistory) {
+				event.preventDefault();
+				onHistory();
 				return;
 			}
 
@@ -38,5 +46,5 @@ export function useAppChromeShortcuts({
 
 		document.addEventListener("keydown", onKeyDown);
 		return () => document.removeEventListener("keydown", onKeyDown);
-	}, [onHelp, onMute, onSettings]);
+	}, [onHelp, onHistory, onMute, onSettings]);
 }

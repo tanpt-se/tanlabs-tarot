@@ -239,8 +239,11 @@ export function buildInterpretation(
 		return `${prefix}【${name}】${orientation}\n${meaning}`;
 	});
 
-	const intro =
-		locale === "vi"
+	const intro = !question.trim()
+		? locale === "vi"
+			? "Lá daily của bạn gợi ý:\n\n"
+			: "Your daily card suggests:\n\n"
+		: locale === "vi"
 			? `Với câu hỏi "${question}", các lá bài gợi ý:\n\n`
 			: `For your question "${question}", the cards suggest:\n\n`;
 

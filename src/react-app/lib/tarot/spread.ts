@@ -19,6 +19,10 @@ export function inferSpreadTypeFromCardCount(count: number): SpreadType | null {
 	return null;
 }
 
+export function isDailySpread(type: SpreadType | null | undefined): boolean {
+	return type === "single";
+}
+
 export function getSpreadPositionLabels(
 	type: SpreadType,
 	labels: UiLabels,

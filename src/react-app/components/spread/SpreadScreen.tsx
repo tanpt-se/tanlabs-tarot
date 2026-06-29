@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppChrome } from "../AppChrome";
+import { HistoryButton } from "../HistoryButton";
+import { useAppChromeShortcuts } from "../../hooks/use-app-chrome-shortcuts";
+import { useBackgroundMusic } from "../../hooks/use-background-music";
 import { loadCardImage, preloadCardImages } from "../../lib/tarot/card-image";
 import type { CardId } from "../../lib/tarot/deck";
 import { drawCards } from "../../lib/tarot/draw";
@@ -11,22 +14,42 @@ import {
 	cardCountForSpread,
 	getSpreadPositionLabels,
 	inferSpreadTypeFromCardCount,
+	isDailySpread,
 } from "../../lib/tarot/spread";
 import type { NarratorAdvanceConfig } from "../../lib/types/narrator-advance";
-import type { NarratorChoicesConfig } from "../../lib/types/narrator-choice";
-import type { Reading, SpreadType } from "../../lib/types/reading";
+import type { Reading, SpreadType, DrawnCard } from "../../lib/types/reading";
 import { useLocale } from "../../hooks/use-locale";
 import { useReversedUprightHold } from "../../hooks/use-reversed-upright-hold";
 import { useSfx } from "../../hooks/use-sfx";
 import { SPREAD_SHUFFLE_DURATION_MS } from "../../lib/animation/constants";
 import { SpreadShuffle } from "./SpreadShuffle";
 import { NarratorShell } from "../character/NarratorShell";
+import { NarratorChoiceList } from "../character/NarratorChoiceList";
+import { GuidedPromptBubble } from "../character/GuidedPromptBubble";
+import { GuidedClarifyFeed } from "../character/GuidedClarifyFeed";
+import {
+	buildClarifyingQuestion,
+	getClarifyingPlaceholder,
+	getClarifyingStepIds,
+	spreadUsesClarifyingFlow,
+} from "../../lib/guided/clarifying-flow";
 import { GameStage } from "../character/GameStage";
 import { ChatInput } from "../chat/ChatInput";
-import { JourneyWheel } from "../home/JourneyWheel";
 import { TarotCard } from "./TarotCard";
 import { ReadingPanel } from "./ReadingPanel";
 import { GameButton } from "../GameButton";
+import { GameToast } from "../GameToast";
+import { GuidedReadingHistoryModal } from "./GuidedReadingHistoryModal";
+import {
+	getTodayDailyCard,
+	hasTodayDailyCard,
+} from "../../lib/storage/daily-card-store";
+import { resolveTodayDailyCard } from "../../lib/guided/daily-reading";
+import {
+	GUIDED_SIX_CARD_ENABLED,
+	GUIDED_THREE_CARD_ENABLED,
+} from "../../lib/features/guided-reading";
+import { isGameModalOpen } from "../../lib/keyboard/app-shortcut";
 
 type SpreadPhase =
 	| "question"
@@ -35,6 +58,7 @@ type SpreadPhase =
 	| "reveal"
 	| "interpret-choice"
 	| "interpret-sequential"
+	| "daily-reading"
 	| "complete";
 
 interface SpreadScreenProps {
@@ -42,17 +66,23 @@ interface SpreadScreenProps {
 	completedReadings: Reading[];
 	onUpdate: (id: string, patch: Partial<Reading>) => void;
 	onBack: () => void;
-	onGoHome: () => void;
-	onViewReading: (readingId: string) => void;
+	onSelectHistoryReading: (readingId: string) => void;
+	onClearReadingHistory: () => void;
 	onSettings: () => void;
-	isNavigating?: boolean;
+	isSettingsOpen: boolean;
+	onCloseSettings: () => void;
+	entranceReady?: boolean;
 }
 
 function inferPhase(reading: Reading): SpreadPhase {
 	if (reading.status === "complete") return "complete";
 	if (reading.cards.length > 0) return "reveal";
-	if (reading.spreadType) return "shuffle";
-	if (!reading.question.trim()) return "question";
+	if (reading.spreadType && spreadUsesClarifyingFlow(reading.spreadType)) {
+		if (!reading.question.trim()) return "question";
+		return "shuffle";
+	}
+	if (reading.spreadType && reading.question.trim()) return "shuffle";
+	if (reading.spreadType) return "question";
 	return "setup";
 }
 
@@ -61,17 +91,27 @@ export function SpreadScreen({
 	completedReadings,
 	onUpdate,
 	onBack,
-	onGoHome,
-	onViewReading,
+	onSelectHistoryReading,
+	onClearReadingHistory,
 	onSettings,
-	isNavigating = false,
+	isSettingsOpen,
+	onCloseSettings,
+	entranceReady = true,
 }: SpreadScreenProps) {
 	const { labels, locale } = useLocale();
+	const { enabled: musicEnabled, toggle: toggleMusic } = useBackgroundMusic();
+	const [muteToast, setMuteToast] = useState<{
+		id: number;
+		message: string;
+	} | null>(null);
+	const [historyOpen, setHistoryOpen] = useState(false);
 	const { held: reversedUprightHeld } = useReversedUprightHold();
 	const { playFlip, playShuffle, playReveal } = useSfx();
 	const [phase, setPhase] = useState<SpreadPhase>(() => inferPhase(reading));
 	const activePhase: SpreadPhase =
 		reading.status === "complete" ? "complete" : phase;
+	const showHistoryChrome =
+		completedReadings.length > 0 && activePhase !== "interpret-choice";
 	const [shuffling, setShuffling] = useState(false);
 	const [summaryMessage, setSummaryMessage] = useState<string | undefined>(() =>
 		reading.status === "complete" && reading.interpretation
@@ -92,6 +132,52 @@ export function SpreadScreen({
 	const autoRevealStartedRef = useRef(false);
 	const revealingIndexRef = useRef<number | null>(null);
 	const shufflingRef = useRef(false);
+
+	const handleMuteHotkey = useCallback(() => {
+		setMuteToast({
+			id: Date.now(),
+			message: musicEnabled
+				? labels.musicMutedToast
+				: labels.musicUnmutedToast,
+		});
+		toggleMusic();
+	}, [
+		labels.musicMutedToast,
+		labels.musicUnmutedToast,
+		musicEnabled,
+		toggleMusic,
+	]);
+
+	const handleSettingsHotkey = useCallback(() => {
+		if (isSettingsOpen) {
+			onCloseSettings();
+			return;
+		}
+
+		if (isGameModalOpen()) return;
+
+		onSettings();
+	}, [isSettingsOpen, onCloseSettings, onSettings]);
+
+	const handleHistoryHotkey = useCallback(() => {
+		if (activePhase === "interpret-choice") return;
+		if (completedReadings.length === 0) return;
+
+		if (historyOpen) {
+			setHistoryOpen(false);
+			return;
+		}
+
+		if (isGameModalOpen()) return;
+
+		setHistoryOpen(true);
+	}, [activePhase, completedReadings.length, historyOpen]);
+
+	useAppChromeShortcuts({
+		onSettings: handleSettingsHotkey,
+		onHistory: showHistoryChrome ? handleHistoryHotkey : undefined,
+		onMute: handleMuteHotkey,
+	});
 
 	useEffect(() => {
 		revealingIndexRef.current = revealingIndex;
@@ -145,10 +231,15 @@ export function SpreadScreen({
 			}
 
 			setRevealingIndex(null);
-			setPhase("interpret-choice");
+			if (isDailySpread(spreadType) || reading.cards.length === 1) {
+				setInterpretCardIndex(0);
+				setPhase("interpret-sequential");
+			} else {
+				setPhase("interpret-choice");
+			}
 			playReveal();
 		},
-		[playReveal, reading.cards.length],
+		[playReveal, reading.cards.length, spreadType],
 	);
 
 	const startDrawingRef = useRef<() => void>(() => {});
@@ -218,25 +309,136 @@ export function SpreadScreen({
 		void loadCardImage(nextCard.id as CardId);
 	}, [activePhase, reading.cards, revealingIndex]);
 
-	const chooseSpread = useCallback(
-		(type: SpreadType) => {
-			setSelectedSpreadType(type);
-			onUpdate(reading.id, { spreadType: type, status: "pending" });
-			setPhase("shuffle");
+	const beginDailyReading = useCallback(
+		(card: DrawnCard) => {
+			void preloadCardImages([card.id as CardId]).catch(() => undefined);
+			onUpdate(reading.id, {
+				clarifyingAnswers: [],
+				question: "",
+				cards: [card],
+				spreadType: "single",
+				status: "complete",
+			});
 			setSummaryMessage(undefined);
-			autoRevealStartedRef.current = false;
+			setPhase("daily-reading");
 		},
 		[onUpdate, reading.id],
 	);
 
-	const submitQuestion = useCallback(
-		(question: string) => {
-			onUpdate(reading.id, { question: question.trim() });
-			setPhase("setup");
+	const chooseSpread = useCallback(
+		(type: SpreadType) => {
+			if (type === "three" && !GUIDED_THREE_CARD_ENABLED) return;
+			if (type === "six" && !GUIDED_SIX_CARD_ENABLED) return;
+
+			setSelectedSpreadType(type);
+
+			if (type === "single") {
+				const todayCard = getTodayDailyCard();
+				if (todayCard) {
+					beginDailyReading(todayCard);
+					autoRevealStartedRef.current = false;
+					return;
+				}
+			}
+
+			onUpdate(reading.id, {
+				spreadType: type,
+				question: "",
+				clarifyingAnswers: [],
+				cards: [],
+				status: "pending",
+			});
+			setPhase(
+				spreadUsesClarifyingFlow(type) ? "question" : "shuffle",
+			);
 			setSummaryMessage(undefined);
+			autoRevealStartedRef.current = false;
 		},
-		[onUpdate, reading.id],
+		[beginDailyReading, onUpdate, reading.id],
 	);
+
+	const clarifyingStepIds = useMemo(
+		() => (spreadType ? getClarifyingStepIds(spreadType) : []),
+		[spreadType],
+	);
+
+	const clarifyingAnswers = reading.clarifyingAnswers;
+
+	const activeClarifyingStepId =
+		clarifyingStepIds[clarifyingAnswers.length] ?? null;
+
+	const clarifyingPlaceholder = activeClarifyingStepId
+		? getClarifyingPlaceholder(activeClarifyingStepId, labels)
+		: labels.homePlaceholder;
+
+	const submitClarifyingAnswer = useCallback(
+		(answer: string) => {
+			const trimmed = answer.trim();
+			if (!trimmed || !spreadType || !spreadUsesClarifyingFlow(spreadType)) {
+				return;
+			}
+
+			const stepIds = getClarifyingStepIds(spreadType);
+			const nextAnswers = [...clarifyingAnswers, trimmed];
+
+			if (nextAnswers.length >= stepIds.length) {
+				onUpdate(reading.id, {
+					clarifyingAnswers: nextAnswers,
+					question: buildClarifyingQuestion(nextAnswers),
+				});
+				setPhase("shuffle");
+				setSummaryMessage(undefined);
+				return;
+			}
+
+			onUpdate(reading.id, { clarifyingAnswers: nextAnswers });
+		},
+		[clarifyingAnswers, onUpdate, reading.id, spreadType],
+	);
+
+	const drawRandomDailyCard = useCallback(() => {
+		if (spreadType !== "single") return;
+
+		beginDailyReading(resolveTodayDailyCard());
+		playShuffle();
+	}, [beginDailyReading, playShuffle, spreadType]);
+
+	const showDailyDrawRandom =
+		activePhase === "question" &&
+		spreadType === "single" &&
+		clarifyingAnswers.length === 0 &&
+		!hasTodayDailyCard();
+
+	const dailyReadingCard =
+		activePhase === "daily-reading" ? reading.cards[0] : undefined;
+
+	const backToSpreadSetup = useCallback(() => {
+		window.clearTimeout(shufflingTimerRef.current);
+		setShuffling(false);
+		onUpdate(reading.id, {
+			spreadType: null,
+			question: "",
+			clarifyingAnswers: [],
+			cards: [],
+			status: "pending",
+			interpretation: null,
+		});
+		setPhase("setup");
+		setSelectedSpreadType(null);
+		setSummaryMessage(undefined);
+		setFlippedIndices(new Set());
+		setRevealingIndex(null);
+		setInterpretCardIndex(0);
+		autoRevealStartedRef.current = false;
+	}, [onUpdate, reading.id, shufflingTimerRef]);
+
+	const handleBack = useCallback(() => {
+		if (activePhase === "setup") {
+			onBack();
+			return;
+		}
+		backToSpreadSetup();
+	}, [activePhase, backToSpreadSetup, onBack]);
 
 	const finishReading = useCallback(
 		(interpretation: string) => {
@@ -246,6 +448,30 @@ export function SpreadScreen({
 		},
 		[onUpdate, reading.id],
 	);
+
+	const isSingleCardInterpret =
+		activePhase === "interpret-sequential" && reading.cards.length === 1;
+
+	useEffect(() => {
+		if (!isSingleCardInterpret || reading.status === "complete") return;
+
+		const interpretation = buildInterpretation(
+			reading.question,
+			reading.cards,
+			positionLabels,
+			locale,
+		);
+		onUpdate(reading.id, { status: "complete", interpretation });
+	}, [
+		isSingleCardInterpret,
+		locale,
+		onUpdate,
+		positionLabels,
+		reading.cards,
+		reading.id,
+		reading.question,
+		reading.status,
+	]);
 
 	const chooseSequentialInterpret = useCallback(() => {
 		setInterpretCardIndex(0);
@@ -309,7 +535,9 @@ export function SpreadScreen({
 			case "setup":
 				return labels.narratorSpreadSetup;
 			case "shuffle":
-				return labels.narratorSpreadShuffle;
+				return isDailySpread(spreadType)
+					? labels.narratorDailyShuffle
+					: labels.narratorSpreadShuffle;
 			case "reveal":
 				return revealingIndex !== null
 					? labels.narratorSpreadDrawing
@@ -321,9 +549,12 @@ export function SpreadScreen({
 			case "complete":
 				return labels.narratorSpreadComplete;
 		}
-	}, [activePhase, labels, revealingIndex]);
+	}, [activePhase, labels, revealingIndex, spreadType]);
 
 	const narratorMessage =
+		activePhase === "question" ||
+		activePhase === "setup" ||
+		activePhase === "interpret-choice" ||
 		activePhase === "interpret-sequential"
 			? undefined
 			: (summaryMessage ?? sequentialCardMessage ?? phaseNarratorMessage);
@@ -343,8 +574,8 @@ export function SpreadScreen({
 				return undefined;
 			case "complete":
 				return {
-					onAdvance: onGoHome,
-					label: labels.spreadGoHome,
+					onAdvance: backToSpreadSetup,
+					label: labels.spreadNewReading,
 					layout: "nav",
 					showIcon: true,
 					blockWhileTyping: false,
@@ -354,65 +585,84 @@ export function SpreadScreen({
 		}
 	}, [
 		activePhase,
-		labels.spreadGoHome,
+		backToSpreadSetup,
+		labels.spreadNewReading,
 		labels.spreadReady,
-		onGoHome,
 		shuffling,
 	]);
 
-	const narratorChoices = useMemo((): NarratorChoicesConfig | undefined => {
-		if (activePhase !== "interpret-choice") return undefined;
-
-		return {
-			options: [
-				{
-					title: labels.spreadInterpretSequential,
-					description: labels.spreadInterpretSequentialDesc,
-					onSelect: chooseSequentialInterpret,
-				},
-				{
-					title: labels.spreadInterpretSummary,
-					description: labels.spreadInterpretSummaryDesc,
-					onSelect: chooseSummaryInterpret,
-				},
-			],
-		};
-	}, [
-		activePhase,
-		chooseSequentialInterpret,
-		chooseSummaryInterpret,
-		labels.spreadInterpretSequential,
-		labels.spreadInterpretSequentialDesc,
-		labels.spreadInterpretSummary,
-		labels.spreadInterpretSummaryDesc,
-	]);
+	const interpretChoiceOptions = useMemo(
+		() => [
+			{
+				title: labels.spreadInterpretSequential,
+				description: labels.spreadInterpretSequentialDesc,
+				onSelect: chooseSequentialInterpret,
+			},
+			{
+				title: labels.spreadInterpretSummary,
+				description: labels.spreadInterpretSummaryDesc,
+				onSelect: chooseSummaryInterpret,
+			},
+		],
+		[
+			chooseSequentialInterpret,
+			chooseSummaryInterpret,
+			labels.spreadInterpretSequential,
+			labels.spreadInterpretSequentialDesc,
+			labels.spreadInterpretSummary,
+			labels.spreadInterpretSummaryDesc,
+		],
+	);
 
 	const spreadChoices = (
-		<div className="spread-choices">
-			<button
+		<div className="spread-choices" role="group">
+			<GameButton
 				type="button"
+				tone="light"
+				layout="stack"
+				fullWidth
 				className="spread-choice"
+				sublabel={labels.spreadSingleDesc}
 				onClick={() => chooseSpread("single")}
 			>
-				<span className="spread-choice__title">{labels.spreadSingle}</span>
-				<span className="spread-choice__desc">{labels.spreadSingleDesc}</span>
-			</button>
-			<button
+				{labels.spreadSingle}
+			</GameButton>
+			<GameButton
 				type="button"
-				className="spread-choice"
+				tone="light"
+				layout="stack"
+				fullWidth
+				className={`spread-choice${!GUIDED_THREE_CARD_ENABLED ? " spread-choice--locked" : ""}`}
+				sublabel={
+					GUIDED_THREE_CARD_ENABLED
+						? labels.spreadThreeDesc
+						: labels.spreadThreeLockedDesc
+				}
+				disabled={!GUIDED_THREE_CARD_ENABLED}
+				title={
+					GUIDED_THREE_CARD_ENABLED ? undefined : labels.spreadThreeLockedDesc
+				}
 				onClick={() => chooseSpread("three")}
 			>
-				<span className="spread-choice__title">{labels.spreadThree}</span>
-				<span className="spread-choice__desc">{labels.spreadThreeDesc}</span>
-			</button>
-			<button
+				{labels.spreadThree}
+			</GameButton>
+			<GameButton
 				type="button"
-				className="spread-choice"
+				tone="light"
+				layout="stack"
+				fullWidth
+				className="spread-choice spread-choice--locked"
+				sublabel={
+					GUIDED_SIX_CARD_ENABLED
+						? labels.spreadSixDesc
+						: labels.spreadSixLockedDesc
+				}
+				disabled={!GUIDED_SIX_CARD_ENABLED}
+				title={GUIDED_SIX_CARD_ENABLED ? undefined : labels.spreadSixLockedDesc}
 				onClick={() => chooseSpread("six")}
 			>
-				<span className="spread-choice__title">{labels.spreadSix}</span>
-				<span className="spread-choice__desc">{labels.spreadSixDesc}</span>
-			</button>
+				{labels.spreadSix}
+			</GameButton>
 		</div>
 	);
 
@@ -430,47 +680,75 @@ export function SpreadScreen({
 	return (
 		<div
 			className="spread-layout"
-			data-phase={activePhase === "interpret-sequential" ? "interpret" : undefined}
+			data-spread={spreadType ?? undefined}
+			data-phase={
+				activePhase === "interpret-sequential"
+					? "interpret"
+					: activePhase === "interpret-choice"
+						? "interpret-choice"
+						: activePhase === "daily-reading"
+							? "daily-reading"
+							: activePhase === "question"
+								? "question"
+								: activePhase === "setup"
+									? "setup"
+									: undefined
+			}
 		>
 			<AppChrome
 				onSettings={onSettings}
-				onBack={onBack}
-				question={
-					activePhase !== "question" && reading.question.trim()
-						? reading.question
-						: undefined
+				onBack={handleBack}
+				history={
+					showHistoryChrome ? (
+						<HistoryButton onClick={() => setHistoryOpen(true)} />
+					) : null
 				}
 			/>
 			<GameStage scrollable>
 				<div className="spread-screen">
 					<div className="spread-screen__content">
-						{activePhase === "question" && (
-							<div className="spread-phase spread-phase--center spread-phase--question">
-								<p className="spread-phase__title">
-									{labels.spreadAskQuestion}
-								</p>
-								<ChatInput
-									onSubmit={submitQuestion}
-									placeholder={labels.homePlaceholder}
-									sendLabel={labels.sendQuestion}
-									autoFocus
-								/>
-								<JourneyWheel
-									readings={completedReadings}
-									onSelect={onViewReading}
-									disabled={isNavigating}
-								/>
+						{activePhase === "setup" ? (
+							<div className="guided-setup">
+								<div className="guided-setup__prompt">
+									<GuidedPromptBubble message={labels.narratorSpreadSetup} />
+								</div>
+								<div className="guided-setup__options">{spreadChoices}</div>
 							</div>
-						)}
+						) : null}
 
-						{activePhase === "setup" && (
-							<div className="spread-phase spread-phase--top">
-								<p className="spread-phase__title">
-									{labels.spreadChooseType}
-								</p>
-								{spreadChoices}
+						{activePhase === "interpret-choice" ? (
+							<div className="guided-setup__prompt">
+								<GuidedPromptBubble
+									message={labels.narratorSpreadInterpretChoice}
+								/>
 							</div>
-						)}
+						) : null}
+
+						{activePhase === "question" && spreadType ? (
+							<GuidedClarifyFeed
+								stepIds={clarifyingStepIds}
+								answers={clarifyingAnswers}
+								labels={labels}
+								promptAction={
+									showDailyDrawRandom
+										? {
+												label: labels.clarifyDailyDrawRandom,
+												onClick: drawRandomDailyCard,
+											}
+										: undefined
+								}
+							/>
+						) : null}
+
+						{activePhase === "daily-reading" && dailyReadingCard ? (
+							<ReadingPanel
+								card={dailyReadingCard}
+								positionLabel={labels.dailyCardLabel}
+								question=""
+								hideFooter
+								highlightOrientation
+							/>
+						) : null}
 
 						{activePhase === "shuffle" && (
 							<div className="spread-phase spread-phase--center">
@@ -536,6 +814,11 @@ export function SpreadScreen({
 										);
 									})}
 								</div>
+								{activePhase === "interpret-choice" ? (
+									<div className="guided-setup__options guided-setup__options--inline">
+										<NarratorChoiceList options={interpretChoiceOptions} />
+									</div>
+								) : null}
 							</div>
 						)}
 
@@ -546,30 +829,68 @@ export function SpreadScreen({
 									positionLabels[interpretCardIndex] ?? labels.spreadReading
 								}
 								question={reading.question}
-								onNext={advanceSequentialInterpret}
+								hideFooter={isSingleCardInterpret}
+								onNext={
+									isSingleCardInterpret
+										? undefined
+										: advanceSequentialInterpret
+								}
 								nextLabel={
-									interpretCardIndex >= reading.cards.length - 1
-										? labels.spreadInterpretSeeSummary
-										: labels.spreadInterpretNext
+									isSingleCardInterpret
+										? undefined
+										: interpretCardIndex >= reading.cards.length - 1
+											? labels.spreadInterpretSeeSummary
+											: labels.spreadInterpretNext
 								}
 							/>
 						) : null}
 
-						{activePhase === "complete" ? (
+						{activePhase === "complete" && spreadType !== "single" ? (
 							<div className="spread-phase spread-phase--center">
-								<GameButton tone="wood" onClick={onGoHome}>
-									{labels.spreadGoHome}
+								<GameButton tone="wood" onClick={backToSpreadSetup}>
+									{labels.spreadNewReading}
 								</GameButton>
 							</div>
 						) : null}
 					</div>
 				</div>
 			</GameStage>
-			<NarratorShell
-				message={narratorMessage}
-				advance={narratorAdvance}
-				choices={narratorChoices}
+			{entranceReady || activePhase === "question" ? (
+				<NarratorShell
+					message={narratorMessage}
+					input={
+						activePhase === "question" && entranceReady ? (
+							<ChatInput
+								key={activeClarifyingStepId ?? "clarify"}
+								variant="dialogue"
+								onSubmit={submitClarifyingAnswer}
+								placeholder={clarifyingPlaceholder}
+								sendLabel={labels.sendQuestion}
+								autoFocus
+							/>
+						) : undefined
+					}
+					advance={narratorAdvance}
+				/>
+			) : null}
+
+			<GuidedReadingHistoryModal
+				open={historyOpen}
+				readings={completedReadings}
+				activeReadingId={reading.id}
+				onOpenChange={setHistoryOpen}
+				onSelect={onSelectHistoryReading}
+				onClear={onClearReadingHistory}
 			/>
+
+			{muteToast ? (
+				<GameToast
+					key={muteToast.id}
+					message={muteToast.message}
+					dismissLabel={labels.dismissToast}
+					onDismiss={() => setMuteToast(null)}
+				/>
+			) : null}
 		</div>
 	);
 };

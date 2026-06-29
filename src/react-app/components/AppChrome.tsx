@@ -1,7 +1,5 @@
-import { useLocale } from "../hooks/use-locale";
+import type { ReactNode } from "react";
 import { BackButton } from "./BackButton";
-import { QuestionBar } from "./QuestionBar";
-import { SelfViewModeButton } from "./self-view/SelfViewModeButton";
 import { HelpButton } from "./HelpButton";
 import { SettingsButton } from "./SettingsButton";
 
@@ -9,38 +7,19 @@ interface AppChromeProps {
 	onSettings: () => void;
 	onHelp?: () => void;
 	onBack?: () => void;
-	question?: string;
-	variant?: "default" | "minimal";
+	history?: ReactNode;
 }
 
-export function AppChrome({
-	onSettings,
-	onHelp,
-	onBack,
-	question,
-	variant = "default",
-}: AppChromeProps) {
-	const { labels } = useLocale();
-	const showQuestion = variant === "default" && Boolean(question?.trim());
-
+export function AppChrome({ onSettings, onHelp, onBack, history }: AppChromeProps) {
 	return (
-		<header className="app-chrome" data-variant={variant}>
+		<header className="app-chrome" data-variant="minimal">
 			<div className="app-chrome__start">
 				{onBack ? <BackButton onClick={onBack} /> : null}
 			</div>
-			{variant === "minimal" ? (
-				<span className="app-chrome__grow" aria-hidden />
-			) : showQuestion ? (
-				<QuestionBar
-					label={labels.spreadYourQuestion}
-					question={question!}
-				/>
-			) : (
-				<span className="app-chrome__grow" aria-hidden />
-			)}
+			<span className="app-chrome__grow" aria-hidden />
 			<div className="app-chrome__actions">
-				<SelfViewModeButton />
 				{onHelp ? <HelpButton onClick={onHelp} /> : null}
+				{history}
 				<SettingsButton onClick={onSettings} />
 			</div>
 		</header>

@@ -1,6 +1,5 @@
-import { useEffect, useId } from "react";
+import { useId } from "react";
 import { useEscapeKey } from "../../hooks/use-escape-key";
-import { useSelfViewSession } from "../../hooks/use-self-view-session";
 import { GameButton } from "../GameButton";
 import { GameModalFrame } from "./GameModalFrame";
 

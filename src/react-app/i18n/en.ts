@@ -2,21 +2,25 @@ import type { UiLabels } from "./types";
 
 export const en: UiLabels = {
 	appName: "Tanlabs Tarot",
-	homeSelfView: "I'm Tarot Reader",
-	homeAiReader: "Start Reading",
+	homeSelfView: "Self Reading",
+	homeAiReader: "Guided Reading",
 	guidedReadingComingSoon: "Coming in a future update",
 	homeNavLabel: "Main menu",
+	homeMoreLabel: "More",
 	homeAbout: "About",
 	homeShop: "Shop",
 	homeSettings: "Settings",
 	readingPanelKeywords: "Keywords",
 	readingPanelMeaning: "Meaning",
 	readingPanelQuestion: "In relation to your question",
+	readingPanelDaily: "Today's reflection",
 	cardBackAlt: "Card back",
 	homePlaceholder: "What would you like to ask?",
 	homeHistoryTitle: "Journey",
 	clearHistory: "Clear history",
 	sendQuestion: "Send question",
+	voiceInput: "Voice input",
+	voiceInputComingSoon: "Coming in a future update",
 	musicOn: "Turn background music on",
 	musicOff: "Turn background music off",
 	musicMutedToast: "Background music muted",
@@ -56,17 +60,17 @@ export const en: UiLabels = {
 	aboutLinkedInLabel: "LinkedIn",
 	aboutFacebookLabel: "Facebook",
 	aboutPhoneLabel: "Phone",
-	aboutWhatsNew: "What's new in 0.6",
+	aboutWhatsNew: "What's new in 0.7",
 	aboutUpdateNotes: [
-		"Self-view spread is kept on refresh; it clears when you leave the tab or reset the table.",
-		"Leaving self-view saves your spread to history and clears the table for a fresh start.",
-		"History opens as a centered modal with a fixed height; tap an entry to replay it on the table.",
-		"Clear all saved spreads from history with a confirmation step.",
-		"Game-style transitions: self-view slides up from the bottom; modals rise in with a spring.",
+		"Daily card: one draw per day, saved locally until midnight.",
+		"Tap Yes in the setup bubble to open today's reading panel instantly — card name, upright or reversed, keywords, and meaning.",
+		"Reopening Daily card on the same day shows the same reading (no new draw).",
+		"Updated daily prompt copy and placeholder; optional topic still works via the text box.",
+		"Guided history in the app chrome; three-card spread disabled for now.",
 	],
-	selfViewMode: "I'm Tarot Reader",
+	selfViewMode: "Self Reading",
 	selfViewModeDesc:
-		"Spread cards only — no narrator, questions, or card meanings.",
+		"Spread and read the cards yourself — no narrator, questions, or card meanings.",
 	selfViewDrawOne: "Draw a card",
 	selfViewCardPlaceholder: "Your card will appear here",
 	selfViewClear: "Clear",
@@ -76,9 +80,9 @@ export const en: UiLabels = {
 		"Your current cards will be saved to history. Start fresh with a new deck?",
 	selfViewResetConfirm: "Yes",
 	selfViewResetCancel: "No",
-	selfViewExitTitle: "Leave self-view?",
+	selfViewExitTitle: "Leave self reading?",
 	selfViewExitMessage:
-		"Your current cards will be saved to history before you return to guided mode.",
+		"Your current spread will be saved to history before returning to Guided Reading.",
 	selfViewExitConfirm: "Yes, leave",
 	selfViewExitCancel: "No, stay",
 	selfViewHistoryTitle: "History",
@@ -107,14 +111,31 @@ export const en: UiLabels = {
 	helpShortcutR: "Hold to show reversed cards upright (works app-wide)",
 	spreadBack: "Back",
 	spreadYourQuestion: "Your question",
-	spreadAskQuestion: "What do you seek?",
 	spreadChooseType: "Choose your spread",
-	spreadSingle: "1 card",
-	spreadSingleDesc: "One card for a focused answer",
-	spreadThree: "3 cards",
+	spreadSingle: "Draw a daily card",
+	spreadSingleDesc: "One card for today's insight",
+	spreadThree: "3-card spread",
 	spreadThreeDesc: "Past, present, and future",
-	spreadSix: "6-card in-depth",
+	spreadThreeLockedDesc: "Coming soon",
+	spreadSix: "6+ card in-depth",
 	spreadSixDesc: "A deeper reading across six positions",
+	spreadSixLockedDesc: "Unlock with tokens — coming soon",
+	clarifyDailyFocus:
+		"Want to look deeper into the energy of an area? Describe it below. Or we can draw any card and share its message with you.",
+	clarifyDailyFocusPlaceholder:
+		"If you share a topic, we can bring the energy to you more easily and deeply. e.g. love, work, rest, …",
+	clarifyDailyDrawRandom: "Yes, draw one card and explain it to me",
+	dailyCardLabel: "Today's daily card",
+	dailyCardOrientation: "Orientation",
+	clarifyThreeArea:
+		"Which part of your life needs clarity right now?",
+	clarifyThreeAreaPlaceholder: "Love, career, family, inner growth…",
+	clarifyThreeQuestion:
+		"What is the heart of your question?",
+	clarifyThreeQuestionPlaceholder: "What am I not seeing clearly about…",
+	clarifyThreeContext:
+		"Is there any timing or situation I should hold in mind?",
+	clarifyThreeContextPlaceholder: "This month, a relationship, a new job…",
 	spreadShuffleNarration:
 		"You shuffle the deck. The cards whisper in the candlelight...",
 	spreadReady: "I'm ready",
@@ -147,9 +168,6 @@ export const en: UiLabels = {
 			? `Dealing ${total} cards...`
 			: `Dealing cards... ${dealt}/${total}`,
 	narratorName: "The Veiled Reader",
-	narratorAlt: "Mysterious hooded tarot reader",
-	narratorSkip: "[ >> skip ]",
-	narratorSkipLabel: "skip",
 	narratorAdvance: "Continue",
 	buttonEnscribe: "Enscribe",
 	narratorHomeGreeting:
@@ -157,7 +175,9 @@ export const en: UiLabels = {
 	narratorSpreadQuestion:
 		"Speak your question softly. The cards are listening.\n\nExample: What does my love life look like ahead?",
 	narratorSpreadSetup:
-		"Choose how deeply you wish to look — one card, three cards, or six for an in-depth reading.",
+		"How would you like to begin? Choose a daily card spread.",
+	narratorDailyShuffle:
+		"Take a breath. When you are ready, your card for today will be drawn.",
 	narratorSpreadShuffle:
 		"Listen… the deck is waking. When you feel ready, the cards will be dealt.",
 	narratorSpreadDrawing:

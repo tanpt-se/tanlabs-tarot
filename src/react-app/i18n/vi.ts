@@ -2,21 +2,25 @@ import type { UiLabels } from "./types";
 
 export const vi: UiLabels = {
 	appName: "Tanlabs Tarot",
-	homeSelfView: "Tôi là người trải bài",
-	homeAiReader: "Trải bài",
+	homeSelfView: "Tự đọc bài",
+	homeAiReader: "Đọc bài có dẫn",
 	guidedReadingComingSoon: "Sẽ có trong bản cập nhật sau",
 	homeNavLabel: "Menu chính",
+	homeMoreLabel: "Thêm",
 	homeAbout: "Thông tin",
 	homeShop: "Cửa hàng",
 	homeSettings: "Cài đặt",
 	readingPanelKeywords: "Từ khóa",
 	readingPanelMeaning: "Ý nghĩa",
 	readingPanelQuestion: "Liên hệ với câu hỏi",
+	readingPanelDaily: "Suy ngẫm hôm nay",
 	cardBackAlt: "Mặt sau lá bài",
 	homePlaceholder: "Bạn muốn hỏi điều gì?",
 	homeHistoryTitle: "Hành trình",
 	clearHistory: "Xóa lịch sử",
 	sendQuestion: "Gửi câu hỏi",
+	voiceInput: "Nhập giọng nói",
+	voiceInputComingSoon: "Sẽ có trong bản cập nhật sau",
 	musicOn: "Bật nhạc nền",
 	musicOff: "Tắt nhạc nền",
 	musicMutedToast: "Đã tắt nhạc nền",
@@ -56,17 +60,17 @@ export const vi: UiLabels = {
 	aboutLinkedInLabel: "LinkedIn",
 	aboutFacebookLabel: "Facebook",
 	aboutPhoneLabel: "Điện thoại",
-	aboutWhatsNew: "Mới trong 0.6",
+	aboutWhatsNew: "Mới trong 0.7",
 	aboutUpdateNotes: [
-		"Lần trải self-view được giữ khi refresh; mất khi đóng tab hoặc reset bàn.",
-		"Thoát self-view sẽ lưu spread vào lịch sử và dọn sạch bàn cho lần trải mới.",
-		"Lịch sử mở dạng modal giữa màn hình, chiều cao cố định; chọn một mục để xem lại trên bàn.",
-		"Xóa toàn bộ lịch sử đã lưu, có bước xác nhận.",
-		"Transition kiểu game: self-view trượt lên từ dưới; modal bật lên với spring.",
+		"Lá daily: mỗi ngày chỉ bốc một lần, lưu cục bộ đến hết ngày.",
+		"Bấm Vâng trong bubble setup để mở ngay panel đọc bài — tên lá, thuận/ngược, từ khóa và ý nghĩa.",
+		"Vào lại Một lá trong cùng ngày sẽ thấy cùng một lá (không bốc mới).",
+		"Cập nhật copy và placeholder; vẫn có thể mô tả chủ đề qua ô nhập bên dưới.",
+		"Lịch sử guided trên app chrome; trải 3 lá tạm tắt.",
 	],
-	selfViewMode: "Tôi là Tarot Reader",
+	selfViewMode: "Tự đọc bài",
 	selfViewModeDesc:
-		"Chỉ trải bài — không có narrator, câu hỏi hay lời giải.",
+		"Tự trải bài và tự đọc — không narrator, câu hỏi hay lời giải.",
 	selfViewDrawOne: "Rút một lá",
 	selfViewCardPlaceholder: "Card sẽ được xuất hiện ở đây",
 	selfViewClear: "Xóa",
@@ -76,9 +80,9 @@ export const vi: UiLabels = {
 		"Lần trải hiện tại sẽ được lưu vào lịch sử. Bạn có muốn bắt đầu lại từ đầu?",
 	selfViewResetConfirm: "Có",
 	selfViewResetCancel: "Không",
-	selfViewExitTitle: "Thoát chế độ tự trải?",
+	selfViewExitTitle: "Thoát chế độ tự đọc?",
 	selfViewExitMessage:
-		"Lần trải hiện tại sẽ được lưu vào lịch sử trước khi quay về chế độ có người dẫn.",
+		"Lần trải hiện tại sẽ được lưu vào lịch sử trước khi quay về Đọc bài có dẫn.",
 	selfViewExitConfirm: "Có, thoát",
 	selfViewExitCancel: "Không, ở lại",
 	selfViewHistoryTitle: "Lịch sử",
@@ -108,14 +112,31 @@ export const vi: UiLabels = {
 		"Giữ để xoay lá ngược cho dễ đọc (dùng được mọi màn hình)",
 	spreadBack: "Quay lại",
 	spreadYourQuestion: "Câu hỏi của bạn",
-	spreadAskQuestion: "Bạn muốn hỏi điều gì?",
 	spreadChooseType: "Chọn kiểu trải bài",
-	spreadSingle: "1 lá",
-	spreadSingleDesc: "Một lá cho câu trả lời tập trung",
-	spreadThree: "3 lá",
+	spreadSingle: "Rút lá daily",
+	spreadSingleDesc: "Một lá cho insight hôm nay",
+	spreadThree: "Trải 3 lá",
 	spreadThreeDesc: "Quá khứ, hiện tại và tương lai",
-	spreadSix: "6 lá chuyên sâu",
+	spreadThreeLockedDesc: "Sắp có",
+	spreadSix: "6+ lá chuyên sâu",
 	spreadSixDesc: "Trải sâu qua sáu vị trí",
+	spreadSixLockedDesc: "Mở bằng token — sắp có",
+	clarifyDailyFocus:
+		"Bạn muốn xem sâu về năng lượng của lĩnh vực nào thì hãy mô tả phía bên dưới. Hoặc chúng tôi sẽ bốc một lá bất kỳ và gửi thông điệp cho bạn.",
+	clarifyDailyFocusPlaceholder:
+		"Nếu bạn đưa ra một chủ đề sẽ dễ dàng và sâu hơn để chúng tôi đưa năng lượng đến bạn. VD: tình yêu, công việc, nghỉ ngơi, …",
+	clarifyDailyDrawRandom: "Vâng, hãy bốc 1 lá và giải thích cho tôi",
+	dailyCardLabel: "Lá daily hôm nay",
+	dailyCardOrientation: "Chiều lá",
+	clarifyThreeArea:
+		"Phần nào trong cuộc sống ngươi cần được soi sáng?",
+	clarifyThreeAreaPlaceholder: "Tình yêu, sự nghiệp, gia đình, nội tâm…",
+	clarifyThreeQuestion:
+		"Câu hỏi ở sâu trong lòng ngươi là gì?",
+	clarifyThreeQuestionPlaceholder: "Điều tôi chưa nhìn rõ về…",
+	clarifyThreeContext:
+		"Có thời điểm hay hoàn cảnh nào ta nên ghi nhận không?",
+	clarifyThreeContextPlaceholder: "Tháng này, một mối quan hệ, công việc mới…",
 	spreadShuffleNarration:
 		"Bạn trộn bộ bài. Những lá bài thì thầm trong ánh nến...",
 	spreadReady: "I'm ready",
@@ -148,9 +169,6 @@ export const vi: UiLabels = {
 			? `Đang bốc ${total} lá bài...`
 			: `Đang bốc bài... ${dealt}/${total}`,
 	narratorName: "Người Đọc Bí Ẩn",
-	narratorAlt: "Cô gái trùm mũ bí ẩn dẫn trải bài tarot",
-	narratorSkip: "[ >> bỏ qua ]",
-	narratorSkipLabel: "bỏ qua",
 	narratorAdvance: "Tiếp tục",
 	buttonEnscribe: "Khắc dấu",
 	narratorHomeGreeting:
@@ -158,7 +176,9 @@ export const vi: UiLabels = {
 	narratorSpreadQuestion:
 		"Hãy thì thầm câu hỏi của ngươi. Những lá bài đang lắng nghe.\n\nVí dụ: Tình yêu của tôi sắp tới sẽ thế nào?",
 	narratorSpreadSetup:
-		"Hãy chọn độ sâu — một lá, ba lá, hay sáu lá chuyên sâu.",
+		"Ngươi muốn bắt đầu thế nào? Chọn trải lá daily.",
+	narratorDailyShuffle:
+		"Hít một hơi thật sâu. Khi sẵn sàng, lá bài hôm nay sẽ được rút ra.",
 	narratorSpreadShuffle:
 		"Lắng nghe… bộ bài đang thức dậy. Khi ngươi sẵn sàng, ta sẽ bốc bài.",
 	narratorSpreadDrawing:

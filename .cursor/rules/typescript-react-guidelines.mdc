@@ -1,0 +1,47 @@
+---
+description: Cursor rules for TypeScript development with React integration.
+alwaysApply: true
+---
+
+# TypeScript React Guidelines
+
+## Prefer functional components
+
+Use function components with typed props. Do not use class components.
+
+```tsx
+export function MyComponent({ title }: MyComponentProps) {
+  // ...
+}
+```
+
+## TypeScript React best practices
+
+- Define explicit TypeScript interfaces or types for props (e.g. `GameButtonProps`); avoid `React.FC`
+- Use `useState` and `useEffect` for state and side effects; prefer custom hooks when logic is reusable
+- Use `React.memo` only when profiling shows a measurable benefit
+- Keep strict TypeScript enabled; prefer type inference where it stays clear
+- Colocate domain types in `src/react-app/lib/types/`
+
+## Folder structure
+
+```
+src/react-app/
+  components/     # UI components (screens, modals, spread, character, etc.)
+  hooks/          # Custom hooks (use-game-screen, use-locale, etc.)
+  providers/      # React context providers
+  lib/            # Pure logic, storage, animation, tarot domain
+  i18n/           # Locale strings and types
+  App.tsx
+  main.tsx
+```
+
+## Additional instructions
+
+1. Use `.tsx` for files with JSX; `.ts` for logic-only modules
+2. Respect strict TypeScript checks (`tsc --noEmit` must pass)
+3. Use `React.lazy` and `Suspense` for code-splitting when adding heavy routes or screens
+4. Prefer type inference for locals; be explicit for public APIs and props
+5. Add error boundaries when introducing new top-level async or fragile UI trees
+6. Follow existing naming: kebab-case files, PascalCase components, `use-*` hooks
+7. Run ESLint with TypeScript and React plugins before finishing changes

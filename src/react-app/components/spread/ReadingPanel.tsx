@@ -16,8 +16,10 @@ interface ReadingPanelProps {
 	card: DrawnCard;
 	positionLabel: string;
 	question: string;
-	onNext: () => void;
-	nextLabel: string;
+	onNext?: () => void;
+	nextLabel?: string;
+	hideFooter?: boolean;
+	highlightOrientation?: boolean;
 }
 
 export function ReadingPanel({
@@ -26,6 +28,8 @@ export function ReadingPanel({
 	question,
 	onNext,
 	nextLabel,
+	hideFooter = false,
+	highlightOrientation = false,
 }: ReadingPanelProps) {
 	const { labels, locale } = useLocale();
 	const name = getCardName(card.id, locale);
@@ -40,6 +44,13 @@ export function ReadingPanel({
 		locale === "vi"
 			? `Với câu hỏi "${question}", ${name} gợi ý bạn suy ngẫm về: ${meaning}`
 			: `Regarding "${question}", ${name} invites you to reflect on: ${meaning}`;
+
+	const dailyReflection =
+		locale === "vi"
+			? `${name} gợi ý cho ngày hôm nay: ${meaning}`
+			: `For today, ${name} invites you to reflect on: ${meaning}`;
+
+	const showQuestionLink = question.trim().length > 0;
 
 	return (
 		<motion.div
@@ -67,7 +78,11 @@ export function ReadingPanel({
 					</svg>
 					{name}
 				</h2>
-				<p className="reading-panel__orientation">{orientation}</p>
+				<p
+					className={`reading-panel__orientation${highlightOrientation ? " reading-panel__orientation--daily" : ""}`}
+				>
+					{orientation}
+				</p>
 			</header>
 
 			<div className="reading-panel__body">
@@ -76,6 +91,16 @@ export function ReadingPanel({
 				</div>
 
 				<div className="reading-panel__content">
+					{highlightOrientation ? (
+						<section className="reading-panel__section">
+							<h3 className="reading-panel__section-title">
+								{labels.dailyCardOrientation}
+							</h3>
+							<p className="reading-panel__text reading-panel__text--orientation">
+								{orientation}
+							</p>
+						</section>
+					) : null}
 					<section className="reading-panel__section">
 						<h3 className="reading-panel__section-title">
 							{labels.readingPanelKeywords}
@@ -98,24 +123,30 @@ export function ReadingPanel({
 
 					<section className="reading-panel__section">
 						<h3 className="reading-panel__section-title">
-							{labels.readingPanelQuestion}
+							{showQuestionLink
+								? labels.readingPanelQuestion
+								: labels.readingPanelDaily}
 						</h3>
-						<p className="reading-panel__text">{questionLink}</p>
+						<p className="reading-panel__text">
+							{showQuestionLink ? questionLink : dailyReflection}
+						</p>
 					</section>
 				</div>
 			</div>
 
-			<footer className="reading-panel__footer">
-				<GameButton
-					tone="light"
-					layout="stack"
-					code={positionLabel.replace(/\D/g, "") || undefined}
-					sublabel={labels.buttonEnscribe}
-					onClick={onNext}
-				>
-					{nextLabel}
-				</GameButton>
-			</footer>
+			{hideFooter ? null : (
+				<footer className="reading-panel__footer">
+					<GameButton
+						tone="light"
+						layout="stack"
+						code={positionLabel.replace(/\D/g, "") || undefined}
+						sublabel={labels.buttonEnscribe}
+						onClick={onNext}
+					>
+						{nextLabel}
+					</GameButton>
+				</footer>
+			)}
 			</GamePanel>
 		</motion.div>
 	);

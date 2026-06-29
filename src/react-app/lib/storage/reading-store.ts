@@ -18,6 +18,7 @@ export function loadReadingHistory(): ReadingHistory {
 			readings: parsed.readings.map((reading) => ({
 				...reading,
 				spreadType: reading.spreadType ?? null,
+				clarifyingAnswers: reading.clarifyingAnswers ?? [],
 			})),
 		};
 	} catch {
@@ -33,6 +34,7 @@ export function createReading(question: string): Reading {
 	return {
 		id: crypto.randomUUID(),
 		question: question.trim(),
+		clarifyingAnswers: [],
 		createdAt: new Date().toISOString(),
 		status: "pending",
 		spreadType: null,

@@ -1,20 +1,24 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useRef, useState, type ReactNode } from "react";
 import type { NarratorAdvanceConfig } from "../../lib/types/narrator-advance";
 import type { NarratorChoicesConfig } from "../../lib/types/narrator-choice";
 import { NarratorAdvanceButton } from "./NarratorAdvanceButton";
 import { NarratorBar } from "./NarratorBar";
 import { NarratorChoiceList } from "./NarratorChoiceList";
-import { NarratorSkipButton } from "./NarratorSkipButton";
 
 interface NarratorShellProps {
 	message?: string;
+	input?: ReactNode;
 	advance?: NarratorAdvanceConfig;
 	choices?: NarratorChoicesConfig;
 }
 
-export function NarratorShell({ message, advance, choices }: NarratorShellProps) {
+export function NarratorShell({
+	message,
+	input,
+	advance,
+	choices,
+}: NarratorShellProps) {
 	const [typing, setTyping] = useState(false);
-	const [skip, setSkip] = useState<(() => void) | null>(null);
 	const advanceInvokeRef = useRef<(() => void) | null>(null);
 	advanceInvokeRef.current = advance?.onAdvance ?? null;
 
@@ -22,7 +26,7 @@ export function NarratorShell({ message, advance, choices }: NarratorShellProps)
 		advanceInvokeRef.current?.();
 	}, []);
 
-	if (!message) return null;
+	if (!message && !input) return null;
 
 	const advanceDisabled =
 		advance?.disabled ||
@@ -30,12 +34,14 @@ export function NarratorShell({ message, advance, choices }: NarratorShellProps)
 
 	return (
 		<div
-			className="narrator-shell"
+			className="guided-narrator"
 			data-active="true"
 			data-choices={choices ? "true" : undefined}
+			data-input={input ? "true" : undefined}
 		>
 			<NarratorBar
-				message={message}
+				message={message ?? ""}
+				input={input}
 				choices={
 					choices ? (
 						<NarratorChoiceList
@@ -56,9 +62,7 @@ export function NarratorShell({ message, advance, choices }: NarratorShellProps)
 					) : undefined
 				}
 				onTypingChange={setTyping}
-				onSkipChange={setSkip}
 			/>
-			{skip ? <NarratorSkipButton onClick={skip} /> : null}
 		</div>
 	);
 }

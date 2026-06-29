@@ -13,6 +13,7 @@ export interface DrawnCard {
 export interface Reading {
 	id: string;
 	question: string;
+	clarifyingAnswers: string[];
 	createdAt: string;
 	status: ReadingStatus;
 	spreadType: SpreadType | null;

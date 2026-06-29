@@ -17,8 +17,10 @@ const VOLUME_STORAGE_KEY = "tarot-music-volume";
 const DEFAULT_VOLUME = 0.35;
 
 function readStoredEnabled(): boolean {
-	if (typeof localStorage === "undefined") return false;
-	return localStorage.getItem(MUSIC_STORAGE_KEY) === "true";
+	if (typeof localStorage === "undefined") return true;
+	const raw = localStorage.getItem(MUSIC_STORAGE_KEY);
+	if (raw === null) return true;
+	return raw === "true";
 }
 
 function readStoredVolume(): number {

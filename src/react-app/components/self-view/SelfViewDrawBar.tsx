@@ -8,7 +8,6 @@ import {
 import { GameButton } from "../GameButton";
 import { CloseButton } from "../CloseButton";
 import { ConfirmModal } from "../modals/ConfirmModal";
-import { SelfViewHistoryButton } from "./SelfViewHistoryButton";
 import { SelfViewRestartButton } from "./SelfViewRestartButton";
 
 type SelfViewDrawBarProps = {
@@ -26,33 +25,18 @@ export function SelfViewDrawBar({
 }: SelfViewDrawBarProps) {
 	const { labels } = useLocale();
 	const {
-		sessions,
 		drawnCards,
 		isViewingHistory,
 		hasOverlayOpen,
 		archiveAndResetLiveSpread,
 		backToCurrent,
 	} = useSelfViewSession();
-	const [historyOpen, setHistoryOpen] = useState(false);
 	const [resetModalOpen, setResetModalOpen] = useState(false);
 
 	const handleResetConfirm = useCallback(() => {
 		archiveAndResetLiveSpread();
 		setResetModalOpen(false);
 	}, [archiveAndResetLiveSpread]);
-
-	const handleHistoryHotkey = useCallback(() => {
-		if (sessions.length === 0) return;
-
-		if (historyOpen) {
-			setHistoryOpen(false);
-			return;
-		}
-
-		if (isAppShortcutBlocked(hasOverlayOpen)) return;
-
-		setHistoryOpen(true);
-	}, [hasOverlayOpen, historyOpen, sessions.length]);
 
 	const handleRestartHotkey = useCallback(() => {
 		if (isAppShortcutBlocked(hasOverlayOpen)) return;
@@ -65,15 +49,7 @@ export function SelfViewDrawBar({
 		const onKeyDown = (event: KeyboardEvent) => {
 			if (shouldIgnoreAppShortcut(event)) return;
 
-			const key = event.key.toLowerCase();
-
-			if (key === "h") {
-				event.preventDefault();
-				handleHistoryHotkey();
-				return;
-			}
-
-			if (key === "c") {
+			if (event.key.toLowerCase() === "c") {
 				event.preventDefault();
 				handleRestartHotkey();
 			}
@@ -81,7 +57,7 @@ export function SelfViewDrawBar({
 
 		document.addEventListener("keydown", onKeyDown);
 		return () => document.removeEventListener("keydown", onKeyDown);
-	}, [handleHistoryHotkey, handleRestartHotkey]);
+	}, [handleRestartHotkey]);
 
 	if (isViewingHistory) {
 		return (
@@ -97,14 +73,6 @@ export function SelfViewDrawBar({
 	return (
 		<>
 			<div className="self-view-draw-float">
-				{sessions.length > 0 ? (
-					<SelfViewHistoryButton
-						open={historyOpen}
-						onOpenChange={setHistoryOpen}
-					/>
-				) : (
-					<span className="self-view-draw-side-spacer" aria-hidden />
-				)}
 				<GameButton
 					tone="light"
 					layout="text"
