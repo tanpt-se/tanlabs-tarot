@@ -19,6 +19,8 @@ export type SelfViewSessionContextValue = {
 	backToCurrent: () => void;
 	resetLiveSpread: () => void;
 	archiveCurrentSpread: () => void;
+	archiveAndResetLiveSpread: () => void;
+	clearHistory: () => void;
 	registerOverlay: () => () => void;
 	hasOverlayOpen: () => boolean;
 };

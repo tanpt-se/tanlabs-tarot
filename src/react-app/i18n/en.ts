@@ -56,12 +56,13 @@ export const en: UiLabels = {
 	aboutLinkedInLabel: "LinkedIn",
 	aboutFacebookLabel: "Facebook",
 	aboutPhoneLabel: "Phone",
-	aboutWhatsNew: "What's new in 0.5",
+	aboutWhatsNew: "What's new in 0.6",
 	aboutUpdateNotes: [
-		"Self-view spread layout rebuilt: steadier card sizes from the first draw through full spreads.",
-		"Wide screens (980px+): second row from five cards; up to five or six cards per row on larger spreads. Mobile stays capped at four per row.",
-		"Card zoom on wide screens unlocks once five or more cards are on the table.",
-		"Normalized card artwork for a consistent aspect ratio across the deck.",
+		"Self-view spread is kept on refresh; it clears when you leave the tab or reset the table.",
+		"Leaving self-view saves your spread to history and clears the table for a fresh start.",
+		"History opens as a centered modal with a fixed height; tap an entry to replay it on the table.",
+		"Clear all saved spreads from history with a confirmation step.",
+		"Game-style transitions: self-view slides up from the bottom; modals rise in with a spring.",
 	],
 	selfViewMode: "I'm Tarot Reader",
 	selfViewModeDesc:
@@ -84,6 +85,12 @@ export const en: UiLabels = {
 	selfViewHistoryEntry: (count) =>
 		count === 1 ? "1 card spread" : `${count}-card spread`,
 	selfViewHistoryClose: "Close history",
+	selfViewHistoryClear: "Clear history",
+	selfViewHistoryClearTitle: "Clear all history?",
+	selfViewHistoryClearMessage:
+		"Every saved spread will be removed. This cannot be undone.",
+	selfViewHistoryClearConfirm: "Yes, clear",
+	selfViewHistoryClearCancel: "No, keep",
 	selfViewBackToCurrent: "Back to current",
 	selfViewHistoryEmpty: "This spread had no cards",
 	helpTitle: "Keyboard shortcuts",

@@ -68,6 +68,11 @@ export type UiLabels = {
 	selfViewHistoryTitle: string;
 	selfViewHistoryEntry: (count: number) => string;
 	selfViewHistoryClose: string;
+	selfViewHistoryClear: string;
+	selfViewHistoryClearTitle: string;
+	selfViewHistoryClearMessage: string;
+	selfViewHistoryClearConfirm: string;
+	selfViewHistoryClearCancel: string;
 	selfViewBackToCurrent: string;
 	selfViewHistoryEmpty: string;
 	helpTitle: string;

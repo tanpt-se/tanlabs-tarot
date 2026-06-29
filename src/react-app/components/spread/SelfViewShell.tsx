@@ -3,11 +3,8 @@ import { useBackgroundMusic } from "../../hooks/use-background-music";
 import { useAppChromeShortcuts } from "../../hooks/use-app-chrome-shortcuts";
 import { useLocale } from "../../hooks/use-locale";
 import { useSfx } from "../../hooks/use-sfx";
-import { SelfViewSessionProvider } from "../../providers/self-view-session-provider";
 import { useSelfViewSession } from "../../hooks/use-self-view-session";
-import {
-	isAppShortcutBlocked,
-} from "../../lib/keyboard/app-shortcut";
+import { isAppShortcutBlocked } from "../../lib/keyboard/app-shortcut";
 import { AppChrome } from "../AppChrome";
 import { GameToast } from "../GameToast";
 import { GameStage } from "../character/GameStage";
@@ -25,7 +22,7 @@ interface SelfViewShellProps {
 	onExit: () => void;
 }
 
-function SelfViewShellContent({
+export function SelfViewShell({
 	onSettings,
 	isSettingsOpen,
 	onCloseSettings,
@@ -33,8 +30,13 @@ function SelfViewShellContent({
 }: SelfViewShellProps) {
 	const { labels } = useLocale();
 	const { enabled, toggle: toggleMusic } = useBackgroundMusic();
-	const { drawnCards, archiveCurrentSpread, hasOverlayOpen, deck, drawOne } =
-		useSelfViewSession();
+	const {
+		drawnCards,
+		archiveAndResetLiveSpread,
+		hasOverlayOpen,
+		deck,
+		drawOne,
+	} = useSelfViewSession();
 	const { playFlip, playCardDeal } = useSfx();
 	const [exitModalOpen, setExitModalOpen] = useState(false);
 	const [helpOpen, setHelpOpen] = useState(false);
@@ -94,10 +96,10 @@ function SelfViewShellContent({
 	}, []);
 
 	const handleExitConfirm = useCallback(() => {
-		archiveCurrentSpread();
+		archiveAndResetLiveSpread();
 		setExitModalOpen(false);
 		onExit();
-	}, [archiveCurrentSpread, onExit]);
+	}, [archiveAndResetLiveSpread, onExit]);
 
 	const warmNextDraw = useCallback(() => {
 		preloadTopOfDeck(deck);
@@ -124,7 +126,7 @@ function SelfViewShellContent({
 					onBack={handleBackRequest}
 				/>
 				<GameStage layout="full">
-					<SelfViewDeckScreen dealOriginRef={dealOriginRef} />
+					<SelfViewDeckScreen />
 				</GameStage>
 				<SelfViewDrawBar
 					drawDisabled={drawDisabled}
@@ -158,23 +160,5 @@ function SelfViewShellContent({
 				/>
 			) : null}
 		</>
-	);
-}
-
-export function SelfViewShell({
-	onSettings,
-	isSettingsOpen,
-	onCloseSettings,
-	onExit,
-}: SelfViewShellProps) {
-	return (
-		<SelfViewSessionProvider>
-			<SelfViewShellContent
-				onSettings={onSettings}
-				isSettingsOpen={isSettingsOpen}
-				onCloseSettings={onCloseSettings}
-				onExit={onExit}
-			/>
-		</SelfViewSessionProvider>
 	);
 }

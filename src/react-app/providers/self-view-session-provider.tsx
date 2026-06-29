@@ -1,5 +1,6 @@
 import {
 	useCallback,
+	useEffect,
 	useMemo,
 	useRef,
 	useState,
@@ -11,8 +12,13 @@ import {
 	saveSelfViewHistory,
 } from "../lib/storage/self-view-history-store";
 import {
+	clearSelfViewLiveSpread,
+	persistSelfViewLiveSpread,
+} from "../lib/storage/self-view-live-spread-store";
+import {
 	SELF_VIEW_SHUFFLE_MS,
 	createFreshDeckState,
+	loadPersistedDeckState,
 } from "../lib/self-view/deck-state";
 import { SELF_VIEW_MAX_SPREAD_CARDS } from "../lib/self-view/spread-layout";
 import { drawOneCard, reshuffleDeck } from "../lib/tarot/draw";
@@ -50,19 +56,30 @@ function useSelfViewHistoryState() {
 		[persist],
 	);
 
-	return { sessions, archiveSpread };
+	const clearHistory = useCallback(() => {
+		persist(() => []);
+	}, [persist]);
+
+	return { sessions, archiveSpread, clearHistory };
 }
 
 export function SelfViewSessionProvider({ children }: { children: ReactNode }) {
-	const { sessions, archiveSpread } = useSelfViewHistoryState();
+	const { sessions, archiveSpread, clearHistory } = useSelfViewHistoryState();
 	const [viewingSessionId, setViewingSessionId] = useState<string | null>(null);
-	const [deck, setDeck] = useState<CardId[]>(() => createFreshDeckState().deck);
-	const [drawnCards, setDrawnCards] = useState<DrawnCard[]>([]);
+	const [initialSpread] = useState(() => loadPersistedDeckState());
+	const [deck, setDeck] = useState<CardId[]>(() => initialSpread.deck);
+	const [drawnCards, setDrawnCards] = useState<DrawnCard[]>(
+		() => initialSpread.drawnCards,
+	);
 	const [flippedIndices, setFlippedIndices] = useState<Set<number>>(
-		() => new Set(),
+		() => initialSpread.flippedIndices,
 	);
 	const [shuffling, setShuffling] = useState(false);
 	const overlayCountRef = useRef(0);
+
+	useEffect(() => {
+		persistSelfViewLiveSpread(deck, drawnCards, flippedIndices);
+	}, [deck, drawnCards, flippedIndices]);
 
 	const viewingSession = useMemo(
 		() => sessions.find((session) => session.id === viewingSessionId) ?? null,
@@ -84,6 +101,7 @@ export function SelfViewSessionProvider({ children }: { children: ReactNode }) {
 	);
 
 	const resetLiveSpread = useCallback(() => {
+		clearSelfViewLiveSpread();
 		const fresh = createFreshDeckState();
 		setDeck(fresh.deck);
 		setDrawnCards(fresh.drawnCards);
@@ -96,6 +114,16 @@ export function SelfViewSessionProvider({ children }: { children: ReactNode }) {
 			archiveSpread(drawnCards);
 		}
 	}, [archiveSpread, drawnCards]);
+
+	const archiveAndResetLiveSpread = useCallback(() => {
+		archiveCurrentSpread();
+		resetLiveSpread();
+	}, [archiveCurrentSpread, resetLiveSpread]);
+
+	const handleClearHistory = useCallback(() => {
+		clearHistory();
+		setViewingSessionId(null);
+	}, [clearHistory]);
 
 	const shuffleDeck = useCallback(() => {
 		if (isViewingHistory || shuffling || deck.length === 0) {
@@ -121,17 +149,16 @@ export function SelfViewSessionProvider({ children }: { children: ReactNode }) {
 		if (!result) return;
 
 		const nextIndex = drawnCards.length;
+		const nextFlippedIndices = new Set(flippedIndices);
+		nextFlippedIndices.add(nextIndex);
+
 		setDeck(result.deck);
 		setDrawnCards((current) => [...current, result.card]);
-		setFlippedIndices((current) => {
-			const next = new Set(current);
-			next.add(nextIndex);
-			return next;
-		});
+		setFlippedIndices(nextFlippedIndices);
 
 		void loadCardImage(result.card.id as CardId);
 		preloadTopOfDeck(result.deck);
-	}, [deck, drawnCards.length, isViewingHistory, shuffling]);
+	}, [deck, drawnCards.length, flippedIndices, isViewingHistory, shuffling]);
 
 	const toggleCardFlip = useCallback(
 		(index: number) => {
@@ -162,6 +189,8 @@ export function SelfViewSessionProvider({ children }: { children: ReactNode }) {
 			backToCurrent,
 			resetLiveSpread,
 			archiveCurrentSpread,
+			archiveAndResetLiveSpread,
+			clearHistory: handleClearHistory,
 			registerOverlay,
 			hasOverlayOpen,
 		}),
@@ -180,6 +209,8 @@ export function SelfViewSessionProvider({ children }: { children: ReactNode }) {
 			backToCurrent,
 			resetLiveSpread,
 			archiveCurrentSpread,
+			archiveAndResetLiveSpread,
+			handleClearHistory,
 			registerOverlay,
 			hasOverlayOpen,
 		],

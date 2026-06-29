@@ -1,12 +1,12 @@
 import { History } from "lucide-react";
-import { useEffect, useId, useRef } from "react";
-import { createPortal } from "react-dom";
+import { useCallback, useId, useState } from "react";
 import { useEscapeKey } from "../../hooks/use-escape-key";
 import { useLocale } from "../../hooks/use-locale";
 import { useSelfViewSession } from "../../hooks/use-self-view-session";
 import { CloseButton } from "../CloseButton";
+import { ConfirmModal } from "../modals/ConfirmModal";
 import { GameButton } from "../GameButton";
-import { GamePanel } from "../GamePanel";
+import { GameModalFrame } from "../modals/GameModalFrame";
 
 interface SelfViewHistoryButtonProps {
 	open: boolean;
@@ -18,90 +18,25 @@ export function SelfViewHistoryButton({
 	onOpenChange,
 }: SelfViewHistoryButtonProps) {
 	const { labels, dateTimeLocale } = useLocale();
-	const { sessions, viewingSessionId, setViewingSessionId, registerOverlay } =
+	const { sessions, viewingSessionId, setViewingSessionId, clearHistory } =
 		useSelfViewSession();
-	const panelRef = useRef<HTMLElement>(null);
 	const listId = useId();
+	const titleId = useId();
+	const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
 
-	useEscapeKey(() => onOpenChange(false), open);
-	useEffect(() => {
-		if (!open) return;
-		return registerOverlay();
-	}, [open, registerOverlay]);
+	const closeHistory = useCallback(() => {
+		onOpenChange(false);
+	}, [onOpenChange]);
 
-	useEffect(() => {
-		if (!open) return;
-		panelRef.current?.focus();
-	}, [open]);
+	useEscapeKey(closeHistory, open && !clearConfirmOpen);
+
+	const handleClearConfirm = useCallback(() => {
+		clearHistory();
+		setClearConfirmOpen(false);
+		closeHistory();
+	}, [clearHistory, closeHistory]);
 
 	if (sessions.length === 0) return null;
-
-	const drawer =
-		open &&
-		createPortal(
-			<div
-				className="self-view-history-drawer"
-				role="presentation"
-				onClick={() => onOpenChange(false)}
-			>
-				<GamePanel
-					ref={panelRef}
-					as="aside"
-					className="self-view-history-drawer__panel"
-					role="dialog"
-					aria-modal="true"
-					aria-label={labels.selfViewHistoryTitle}
-					tabIndex={-1}
-					onClick={(event) => event.stopPropagation()}
-				>
-					<header className="self-view-history-drawer__header">
-						<h2 className="self-view-history-drawer__title">
-							{labels.selfViewHistoryTitle}
-						</h2>
-						<CloseButton
-							onClick={() => onOpenChange(false)}
-							aria-label={labels.selfViewHistoryClose}
-						/>
-					</header>
-
-					<ul
-						id={listId}
-						className="self-view-history-drawer__list"
-						aria-label={labels.selfViewHistoryTitle}
-					>
-						{sessions.map((entry) => (
-							<li key={entry.id}>
-								<button
-									type="button"
-									className="self-view-history-drawer__item"
-									data-active={viewingSessionId === entry.id}
-									onClick={() => {
-										setViewingSessionId(entry.id);
-										onOpenChange(false);
-									}}
-								>
-									<span className="self-view-history-drawer__label">
-										{labels.selfViewHistoryEntry(entry.cards.length)}
-									</span>
-									<time
-										className="self-view-history-drawer__time"
-										dateTime={entry.createdAt}
-									>
-										{new Intl.DateTimeFormat(dateTimeLocale, {
-											day: "2-digit",
-											month: "2-digit",
-											hour: "2-digit",
-											minute: "2-digit",
-										}).format(new Date(entry.createdAt))}
-									</time>
-								</button>
-							</li>
-						))}
-					</ul>
-				</GamePanel>
-			</div>,
-			document.body,
-		);
 
 	return (
 		<>
@@ -122,7 +57,83 @@ export function SelfViewHistoryButton({
 					absoluteStrokeWidth
 				/>
 			</GameButton>
-			{drawer}
+
+			{open ? (
+				<GameModalFrame
+					onClose={closeHistory}
+					panelClassName="self-view-history-modal"
+					panelProps={{ "aria-labelledby": titleId }}
+				>
+					<header className="self-view-history-modal__header">
+						<h2 id={titleId} className="self-view-history-modal__title">
+							{labels.selfViewHistoryTitle}
+						</h2>
+						<CloseButton
+							onClick={closeHistory}
+							aria-label={labels.selfViewHistoryClose}
+						/>
+					</header>
+
+					<div className="self-view-history-modal__body">
+						<ul
+							id={listId}
+							className="self-view-history-modal__list"
+							aria-label={labels.selfViewHistoryTitle}
+						>
+							{sessions.map((entry) => (
+								<li key={entry.id}>
+									<button
+										type="button"
+										className="self-view-history-modal__item"
+										data-active={viewingSessionId === entry.id}
+										onClick={() => {
+											setViewingSessionId(entry.id);
+											closeHistory();
+										}}
+									>
+										<span className="self-view-history-modal__label">
+											{labels.selfViewHistoryEntry(entry.cards.length)}
+										</span>
+										<time
+											className="self-view-history-modal__time"
+											dateTime={entry.createdAt}
+										>
+											{new Intl.DateTimeFormat(dateTimeLocale, {
+												day: "2-digit",
+												month: "2-digit",
+												hour: "2-digit",
+												minute: "2-digit",
+											}).format(new Date(entry.createdAt))}
+										</time>
+									</button>
+								</li>
+							))}
+						</ul>
+					</div>
+
+					<footer className="self-view-history-modal__footer">
+						<GameButton
+							tone="wood"
+							layout="text"
+							className="self-view-history-modal__clear"
+							onClick={() => setClearConfirmOpen(true)}
+						>
+							{labels.selfViewHistoryClear}
+						</GameButton>
+					</footer>
+				</GameModalFrame>
+			) : null}
+
+			{clearConfirmOpen ? (
+				<ConfirmModal
+					title={labels.selfViewHistoryClearTitle}
+					message={labels.selfViewHistoryClearMessage}
+					confirmLabel={labels.selfViewHistoryClearConfirm}
+					cancelLabel={labels.selfViewHistoryClearCancel}
+					onConfirm={handleClearConfirm}
+					onCancel={() => setClearConfirmOpen(false)}
+				/>
+			) : null}
 		</>
 	);
 }

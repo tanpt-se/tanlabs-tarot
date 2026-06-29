@@ -17,7 +17,7 @@ export function SelfViewRestartButton({
 		<GameButton
 			layout="icon"
 			tone="wood"
-			className="self-view-draw-side-action self-view-restart-button"
+			className="self-view-draw-side-action"
 			onClick={onClick}
 			disabled={disabled}
 			aria-label={labels.selfViewRestart}

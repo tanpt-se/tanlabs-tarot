@@ -1,13 +1,12 @@
-import { useEffect, useRef } from "react";
-import { createPortal } from "react-dom";
 import { CloseButton } from "../CloseButton";
 import { GameButton } from "../GameButton";
 import { LocaleSwitcher } from "../LocaleSwitcher";
 import { SpeakerIcon } from "../icons/SpeakerIcon";
 import { useBackgroundMusic } from "../../hooks/use-background-music";
+import { useEscapeKey } from "../../hooks/use-escape-key";
 import { useLocale } from "../../hooks/use-locale";
 import { useSfx } from "../../hooks/use-sfx";
-import { GamePanel } from "../GamePanel";
+import { GameModalFrame } from "../modals/GameModalFrame";
 
 interface SettingsModalProps {
 	onClose: () => void;
@@ -29,31 +28,15 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
 		setVolume: setSfxVolume,
 	} = useSfx();
 	const effectsEnabled = sfxEnabled && vfxEnabled;
-	const dialogRef = useRef<HTMLDivElement>(null);
 
-	useEffect(() => {
-		const handleKeyDown = (event: KeyboardEvent) => {
-			if (event.key === "Escape") onClose();
-		};
-		document.addEventListener("keydown", handleKeyDown);
-		return () => document.removeEventListener("keydown", handleKeyDown);
-	}, [onClose]);
+	useEscapeKey(onClose);
 
-	useEffect(() => {
-		dialogRef.current?.focus();
-	}, []);
-
-	return createPortal(
-		<div className="game-modal-overlay" role="presentation" onClick={onClose}>
-			<GamePanel
-				ref={dialogRef}
-				className="game-modal settings-modal"
-				role="dialog"
-				aria-modal="true"
-				aria-label={labels.settingsTitle}
-				tabIndex={-1}
-				onClick={(event) => event.stopPropagation()}
-			>
+	return (
+		<GameModalFrame
+			onClose={onClose}
+			panelClassName="settings-modal"
+			panelProps={{ "aria-label": labels.settingsTitle }}
+		>
 				<header className="settings-modal__header">
 					<h2 className="settings-modal__title">{labels.settingsTitle}</h2>
 					<CloseButton onClick={onClose} aria-label={labels.closeSettings} />
@@ -153,8 +136,6 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
 						</div>
 					</div>
 				</div>
-			</GamePanel>
-		</div>,
-		document.body,
+		</GameModalFrame>
 	);
 }

@@ -56,12 +56,13 @@ export const vi: UiLabels = {
 	aboutLinkedInLabel: "LinkedIn",
 	aboutFacebookLabel: "Facebook",
 	aboutPhoneLabel: "Điện thoại",
-	aboutWhatsNew: "Mới trong 0.5",
+	aboutWhatsNew: "Mới trong 0.6",
 	aboutUpdateNotes: [
-		"Làm lại bố cục self-view: kích thước lá ổn định từ lần rút đầu đến khi spread đầy.",
-		"Màn rộng (≥980px): từ 5 lá xuống hàng 2; spread lớn lên tới 5–6 lá mỗi hàng. Mobile giữ tối đa 4 lá/hàng.",
-		"Zoom trên màn rộng chỉ bật khi đã có từ 5 lá trở lên trên bàn.",
-		"Chuẩn hóa ảnh lá bài để tỉ lệ đồng nhất trên cả bộ bài.",
+		"Lần trải self-view được giữ khi refresh; mất khi đóng tab hoặc reset bàn.",
+		"Thoát self-view sẽ lưu spread vào lịch sử và dọn sạch bàn cho lần trải mới.",
+		"Lịch sử mở dạng modal giữa màn hình, chiều cao cố định; chọn một mục để xem lại trên bàn.",
+		"Xóa toàn bộ lịch sử đã lưu, có bước xác nhận.",
+		"Transition kiểu game: self-view trượt lên từ dưới; modal bật lên với spring.",
 	],
 	selfViewMode: "Tôi là Tarot Reader",
 	selfViewModeDesc:
@@ -84,6 +85,12 @@ export const vi: UiLabels = {
 	selfViewHistoryEntry: (count) =>
 		count === 1 ? "Trải 1 lá" : `Trải ${count} lá`,
 	selfViewHistoryClose: "Đóng lịch sử",
+	selfViewHistoryClear: "Xóa lịch sử",
+	selfViewHistoryClearTitle: "Xóa toàn bộ lịch sử?",
+	selfViewHistoryClearMessage:
+		"Mọi lần trải đã lưu sẽ bị xóa. Thao tác này không thể hoàn tác.",
+	selfViewHistoryClearConfirm: "Có, xóa",
+	selfViewHistoryClearCancel: "Không, giữ lại",
 	selfViewBackToCurrent: "Về lần hiện tại",
 	selfViewHistoryEmpty: "Lần trải này không có lá bài",
 	helpTitle: "Phím tắt",

@@ -138,6 +138,10 @@
 
 	--game-modal-width: 28rem;
 	--game-modal-height: 32rem;
+	--self-view-history-modal-height: min(50rem,
+			calc(100vh - var(--frame-top) - var(--frame-bottom) - 2rem));
+	--self-view-history-item-height: 3.5rem;
+	--self-view-history-list-capacity: 5;
 	--game-modal-title-size: 1.3rem;
 	--game-modal-heading-size: 1.2rem;
 	--game-modal-body-size: 1.1rem;
@@ -158,7 +162,6 @@
 	--z-self-view-zoom: 20;
 	--z-self-view-draw: 12;
 	--z-toast: 40;
-	--z-history-drawer: 48;
 	--z-modal: 55;
 	--z-loading: 70;
 }

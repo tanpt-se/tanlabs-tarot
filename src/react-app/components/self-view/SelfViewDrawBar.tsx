@@ -30,18 +30,16 @@ export function SelfViewDrawBar({
 		drawnCards,
 		isViewingHistory,
 		hasOverlayOpen,
-		archiveCurrentSpread,
-		resetLiveSpread,
+		archiveAndResetLiveSpread,
 		backToCurrent,
 	} = useSelfViewSession();
 	const [historyOpen, setHistoryOpen] = useState(false);
 	const [resetModalOpen, setResetModalOpen] = useState(false);
 
 	const handleResetConfirm = useCallback(() => {
-		archiveCurrentSpread();
-		resetLiveSpread();
+		archiveAndResetLiveSpread();
 		setResetModalOpen(false);
-	}, [archiveCurrentSpread, resetLiveSpread]);
+	}, [archiveAndResetLiveSpread]);
 
 	const handleHistoryHotkey = useCallback(() => {
 		if (sessions.length === 0) return;

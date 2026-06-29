@@ -5,10 +5,12 @@ import { useEscapeKey } from "../../hooks/use-escape-key";
 import { useReversedUprightHold } from "../../hooks/use-reversed-upright-hold";
 import {
 	isAppShortcutBlocked,
+	isGameModalOpen,
 	shouldIgnoreAppShortcut,
 } from "../../lib/keyboard/app-shortcut";
 import { parseSelfViewCardSlotKey } from "../../lib/keyboard/self-view-card-slot";
-import { preloadTopOfDeck } from "../../lib/tarot/card-image";
+import { preloadTopOfDeck, loadCardImage } from "../../lib/tarot/card-image";
+import type { CardId } from "../../lib/tarot/deck";
 import {
 	buildSpreadMoldRows,
 	getSpreadMoldRowColCount,
@@ -35,13 +37,7 @@ type FocusState = {
 	phase: FocusPhase;
 };
 
-type SelfViewDeckScreenProps = {
-	dealOriginRef: React.RefObject<HTMLButtonElement | null>;
-};
-
-export function SelfViewDeckScreen({ dealOriginRef }: SelfViewDeckScreenProps) {
-	void dealOriginRef;
-
+export function SelfViewDeckScreen() {
 	const { labels } = useLocale();
 	const {
 		deck,
@@ -84,7 +80,7 @@ export function SelfViewDeckScreen({ dealOriginRef }: SelfViewDeckScreenProps) {
 		};
 	}, []);
 
-	const spreadSlotCount = drawnCards.length;
+	const spreadSlotCount = displayedCards.length;
 
 	const spreadLayout = useMemo(() => {
 		return getSelfViewSpreadLayout(
@@ -149,8 +145,7 @@ export function SelfViewDeckScreen({ dealOriginRef }: SelfViewDeckScreenProps) {
 	);
 
 	const handleEscape = useCallback(() => {
-		if (document.querySelector(".game-modal-overlay")) return;
-		if (document.querySelector(".self-view-history-drawer")) return;
+		if (isGameModalOpen()) return;
 
 		if (focusStateRef.current) {
 			void closeFocus();
@@ -174,6 +169,14 @@ export function SelfViewDeckScreen({ dealOriginRef }: SelfViewDeckScreenProps) {
 			preloadTopOfDeck(deck);
 		}
 	}, [deck, isViewingHistory]);
+
+	useEffect(() => {
+		if (!isViewingHistory) return;
+
+		for (const card of displayedCards) {
+			void loadCardImage(card.id as CardId);
+		}
+	}, [displayedCards, isViewingHistory]);
 
 	const warmNextDraw = useCallback(() => {
 		preloadTopOfDeck(deck);
@@ -242,11 +245,11 @@ export function SelfViewDeckScreen({ dealOriginRef }: SelfViewDeckScreenProps) {
 	}, [handleCardZoomHotkey, handleDrawHotkey]);
 
 	type SpreadRowCell =
-		| { kind: "card"; card: (typeof drawnCards)[number]; index: number }
+		| { kind: "card"; card: (typeof displayedCards)[number]; index: number }
 		| { kind: "empty"; index: number };
 
 	const spreadRows = useMemo(() => {
-		const moldRows = buildSpreadMoldRows(drawnCards.length, spreadLayout);
+		const moldRows = buildSpreadMoldRows(displayedCards.length, spreadLayout);
 
 		return moldRows.map((row, rowIndex) => ({
 			cols: getSpreadMoldRowColCount(
@@ -260,12 +263,12 @@ export function SelfViewDeckScreen({ dealOriginRef }: SelfViewDeckScreenProps) {
 
 				return {
 					kind: "card",
-					card: drawnCards[cell.index]!,
+					card: displayedCards[cell.index]!,
 					index: cell.index,
 				};
 			}),
 		}));
-	}, [drawnCards, spreadLayout]);
+	}, [displayedCards, spreadLayout]);
 
 	const isZoomActive =
 		focusState !== null && focusState.phase !== "handoff";
@@ -335,7 +338,7 @@ export function SelfViewDeckScreen({ dealOriginRef }: SelfViewDeckScreenProps) {
 		[renderSpreadCard],
 	);
 
-	const hasSpread = spreadSlotCount > 0 || isViewingHistory;
+	const hasSpread = displayedCards.length > 0 || isViewingHistory;
 
 	return (
 		<>

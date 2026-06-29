@@ -1,10 +1,8 @@
-import { useContext, useEffect, useRef } from "react";
-import { createPortal } from "react-dom";
+import { useId } from "react";
 import { CloseButton } from "../CloseButton";
-import { GamePanel } from "../GamePanel";
 import { useEscapeKey } from "../../hooks/use-escape-key";
 import { useLocale } from "../../hooks/use-locale";
-import { SelfViewSessionContext } from "../../providers/self-view-session-context";
+import { GameModalFrame } from "../modals/GameModalFrame";
 
 interface HelpModalProps {
 	onClose: () => void;
@@ -24,53 +22,40 @@ const SHORTCUTS = [
 
 export function HelpModal({ onClose }: HelpModalProps) {
 	const { labels } = useLocale();
-	const session = useContext(SelfViewSessionContext);
-	const dialogRef = useRef<HTMLDivElement>(null);
+	const titleId = useId();
 
 	useEscapeKey(onClose);
-	useEffect(() => session?.registerOverlay(), [session]);
 
-	useEffect(() => {
-		dialogRef.current?.focus();
-	}, []);
+	return (
+		<GameModalFrame
+			onClose={onClose}
+			panelClassName="help-modal"
+			panelProps={{ "aria-labelledby": titleId }}
+		>
+			<header className="help-modal__header">
+				<h2 id={titleId} className="help-modal__title">
+					{labels.helpTitle}
+				</h2>
+				<CloseButton onClick={onClose} aria-label={labels.closeHelp} />
+			</header>
 
-	return createPortal(
-		<div className="game-modal-overlay" role="presentation" onClick={onClose}>
-			<GamePanel
-				ref={dialogRef}
-				className="game-modal help-modal"
-				role="dialog"
-				aria-modal="true"
-				aria-labelledby="help-modal-title"
-				tabIndex={-1}
-				onClick={(event) => event.stopPropagation()}
-			>
-				<header className="help-modal__header">
-					<h2 id="help-modal-title" className="help-modal__title">
-						{labels.helpTitle}
-					</h2>
-					<CloseButton onClick={onClose} aria-label={labels.closeHelp} />
-				</header>
-
-				<div className="help-modal__body">
-					<ul className="help-modal__list">
-						{SHORTCUTS.map(({ key, labelKey }) => (
-							<li key={key} className="help-modal__item">
-								<span className="help-modal__key game-button game-button--light">
-									<span className="game-button__shine" aria-hidden />
-									<span className="game-button__frame help-modal__key-frame">
-										<span className="help-modal__key-label">{key}</span>
-									</span>
+			<div className="help-modal__body">
+				<ul className="help-modal__list">
+					{SHORTCUTS.map(({ key, labelKey }) => (
+						<li key={key} className="help-modal__item">
+							<span className="help-modal__key game-button game-button--light">
+								<span className="game-button__shine" aria-hidden />
+								<span className="game-button__frame help-modal__key-frame">
+									<span className="help-modal__key-label">{key}</span>
 								</span>
-								<span className="help-modal__desc">
-									{labels[labelKey]}
-								</span>
-							</li>
-						))}
-					</ul>
-				</div>
-			</GamePanel>
-		</div>,
-		document.body,
+							</span>
+							<span className="help-modal__desc">
+								{labels[labelKey]}
+							</span>
+						</li>
+					))}
+				</ul>
+			</div>
+		</GameModalFrame>
 	);
 }

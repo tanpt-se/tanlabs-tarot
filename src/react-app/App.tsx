@@ -11,6 +11,7 @@ import { useReadingHistory } from "./hooks/use-reading-history";
 import { useSelfView } from "./hooks/use-self-view";
 import { GUIDED_READING_ENABLED } from "./lib/features/guided-reading";
 import { ScreenTransition } from "./components/motion/screen-motion";
+import { SelfViewSessionProvider } from "./providers/self-view-session-provider";
 import type { Reading } from "./lib/types/reading";
 import "./App.css";
 
@@ -87,65 +88,73 @@ function App() {
 	);
 
 	return (
-		<div
-			className="app-shell"
-			data-self-view={selfView ? "true" : undefined}
-			data-screen={selfView ? "self-view" : screen}
-		>
-			<HomeTableBackdrop />
+		<SelfViewSessionProvider>
+			<div
+				className="app-shell"
+				data-self-view={selfView ? "true" : undefined}
+				data-screen={selfView ? "self-view" : screen}
+			>
+				<HomeTableBackdrop />
 
-			<main className="app">
-				<AnimatePresence mode="wait">
-					{selfView ? (
-						<ScreenTransition key="self-view" className="app-screen">
-							<SelfViewShell
-								onSettings={openSettings}
-								isSettingsOpen={isSettingsOpen}
-								onCloseSettings={closeSettings}
-								onExit={handleSelfViewBack}
-							/>
-						</ScreenTransition>
-					) : screen === "home" ? (
-						<ScreenTransition key="home" className="app-screen">
-							<HomeScreen
-								onSelfView={handleStartSelfView}
-								onGuidedReading={handleStartGuidedReading}
-								onOpenSettings={openSettings}
-								onCloseSettings={closeSettings}
-								isSettingsOpen={isSettingsOpen}
-							/>
-						</ScreenTransition>
-					) : GUIDED_READING_ENABLED ? (
-						<ScreenTransition key={`reading-${readingId}`} className="app-screen">
-							<SpreadScreen
-								reading={activeReading}
-								completedReadings={completedReadings}
-								onUpdate={updateReading}
-								onBack={handleGoHome}
-								onGoHome={handleGoHome}
-								onViewReading={handleViewReading}
-								onSettings={openSettings}
-								isNavigating={isNavigating}
-							/>
-						</ScreenTransition>
-					) : (
-						<ScreenTransition key="home" className="app-screen">
-							<HomeScreen
-								onSelfView={handleStartSelfView}
-								onGuidedReading={handleStartGuidedReading}
-								onOpenSettings={openSettings}
-								onCloseSettings={closeSettings}
-								isSettingsOpen={isSettingsOpen}
-							/>
-						</ScreenTransition>
-					)}
-				</AnimatePresence>
+				<main className="app">
+					<AnimatePresence mode="wait">
+						{selfView ? (
+							<ScreenTransition
+								key="self-view"
+								variant="self-view"
+								className="app-screen"
+							>
+								<SelfViewShell
+									onSettings={openSettings}
+									isSettingsOpen={isSettingsOpen}
+									onCloseSettings={closeSettings}
+									onExit={handleSelfViewBack}
+								/>
+							</ScreenTransition>
+						) : screen === "home" ? (
+							<ScreenTransition key="home" variant="home" className="app-screen">
+								<HomeScreen
+									onSelfView={handleStartSelfView}
+									onGuidedReading={handleStartGuidedReading}
+									onOpenSettings={openSettings}
+									onCloseSettings={closeSettings}
+									isSettingsOpen={isSettingsOpen}
+								/>
+							</ScreenTransition>
+						) : GUIDED_READING_ENABLED ? (
+							<ScreenTransition key={`reading-${readingId}`} className="app-screen">
+								<SpreadScreen
+									reading={activeReading}
+									completedReadings={completedReadings}
+									onUpdate={updateReading}
+									onBack={handleGoHome}
+									onGoHome={handleGoHome}
+									onViewReading={handleViewReading}
+									onSettings={openSettings}
+									isNavigating={isNavigating}
+								/>
+							</ScreenTransition>
+						) : (
+							<ScreenTransition key="home-fallback" variant="home" className="app-screen">
+								<HomeScreen
+									onSelfView={handleStartSelfView}
+									onGuidedReading={handleStartGuidedReading}
+									onOpenSettings={openSettings}
+									onCloseSettings={closeSettings}
+									isSettingsOpen={isSettingsOpen}
+								/>
+							</ScreenTransition>
+						)}
+					</AnimatePresence>
 
-				{isSettingsOpen && <SettingsModal onClose={closeSettings} />}
-			</main>
+					{isSettingsOpen ? (
+					<SettingsModal key="settings-modal" onClose={closeSettings} />
+				) : null}
+				</main>
 
-			{isNavigating ? <AppLoadingOverlay /> : null}
-		</div>
+				{isNavigating ? <AppLoadingOverlay /> : null}
+			</div>
+		</SelfViewSessionProvider>
 	);
 }
 
